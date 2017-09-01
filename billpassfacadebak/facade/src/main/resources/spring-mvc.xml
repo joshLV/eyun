@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+    http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+    http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+ <!-- 扫描类包，将标注Spring注解的类自动转化为Bean，同时完成Bean的注入 -->
+
+    <mvc:annotation-driven/>
+    <mvc:default-servlet-handler/>
+    <context:annotation-config/>
+
+    <context:component-scan base-package="com.yjhl.billpass.facade.common"/>
+    <context:component-scan base-package="com.yjhl.billpass.facade.controller"/>
+    <context:component-scan base-package="com.yjhl.yqb.entity"/>
+    <context:component-scan base-package="com.yjhl.yqb.common"/>
+
+    <mvc:resources mapping="/swagger/**" location="/WEB-INF/swagger-ui/"/>
+
+    <dubbo:annotation package="com.yjhl.billpass.facade.controller" />
+
+
+
+
+    <bean id="mappingJackson2HttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" />
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+        <property name="messageConverters">
+            <list>
+                <ref bean="mappingJackson2HttpMessageConverter" />
+            </list>
+        </property>
+    </bean>
+ </beans>       

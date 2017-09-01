@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:annotation-config />
+
+    <context:component-scan base-package="com.yjhl.billpass.facade.consumers"/>
+
+    <context:property-placeholder location="classpath:environment.properties"/>
+
+    <bean id="messageDispatcher" class="com.yjhl.yqb.aliyunmq.MessageDispatcher"></bean>
+    <bean class="com.aliyun.openservices.ons.api.bean.ConsumerBean" init-method="start" destroy-method="shutdown">
+        <property name="properties">
+            <props>
+                <prop key="ConsumerId">CID-billpassSystem</prop>
+                <prop key="AccessKey">LTAICjc78tDMXPjm</prop>
+                <prop key="SecretKey">TN2RCOGFJCrreSjBz6KSCvvvCRRx5K</prop>
+                <!--将消费者线程数固定为50个
+                <prop key="ConsumeThreadNums">50</prop>
+                -->
+            </props>
+        </property>
+        <property name="subscriptionTable">
+            <map>
+                <entry value-ref="messageDispatcher">
+                    <key>
+                        <bean class="com.aliyun.openservices.ons.api.bean.Subscription">
+                            <property name="topic" value="billpassSystem"/>
+                            <property name="expression" value="*"/><!--expression即Tag，可以设置成具体的Tag，如 taga||tagb||tagc，也可设置成*。 *仅代表订阅所有Tag，不支持通配-->
+                        </bean>
+                    </key>
+                </entry>
+                <!--更多的订阅添加entry节点即可-->
+            </map>
+        </property>
+    </bean>
+
+</beans>

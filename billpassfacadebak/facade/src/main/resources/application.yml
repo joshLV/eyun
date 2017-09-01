@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: billpass-facade
+
+server:
+  port: 7905
+
+eureka:
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    appname: billpass-facade
