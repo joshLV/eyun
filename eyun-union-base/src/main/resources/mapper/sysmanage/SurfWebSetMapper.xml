@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+	<resultMap id="SurfWebSetList" type="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="placeId" property="placeId" jdbcType="VARCHAR" />
+		<result column="placeCode" property="placeCode" jdbcType="VARCHAR" />
+		<result column="placeName" property="placeName" jdbcType="VARCHAR" />
+		<result column="CtrlCode" property="placeCtrlCode" jdbcType="VARCHAR" />
+		<result column="feeCtrlCode" property="feeCtrlCode" jdbcType="VARCHAR" />
+		<result column="freeTime" property="freeTime" jdbcType="INTEGER" />
+		
+	</resultMap>
+	
+	<!-- 获取场合的上网设置 -->
+	<select id="findListBy" parameterType="java.util.Map" resultMap="SurfWebSetList">
+					select 
+						 bp.placeId id,
+				         bp.memberID,
+				         bp.placeID,
+				         bp.placeCode,
+				         bp.placeName,
+				         bp.ctrlCode as placeCtrlCode,
+				         fee.freeTime,
+				         substr(bp.ctrlcode, 4, 1) surfWay
+				    from basPlace bp
+				      left join feePlaceChargeSetup fee
+				      on bp.placeid = fee.placeid
+				       left join t_place_user_related n
+				       on  bp.placecode= n.place_code
+				       where 1=1
+				    <if test="creator != null and creator != '' "> 
+				       and n.user_id = #{creator} and bp.status = '8'
+				    </if>
+					<if test="placeCode != null and placeCode != '' and placeCode != -1">
+						and bp.placeCode=#{placeCode}
+					</if>
+					<if test="SORT != null and SORT != ''">
+						order by ${SORT}
+					</if>
+					<if test="DIR != null and DIR != ''">
+						${DIR}
+					</if>
+	</select>
+	
+	<!-- 更新场所的上网设置 -->
+	<!-- <select id="update" statementType="CALLABLE" parameterType="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+		call spsys_setSurfWeb(
+			#{placeId,mode=IN,jdbcType=INTEGER},
+			#{placeCtrlCode,mode=IN,jdbcType=VARCHAR},
+			#{feeCtrlCode,mode=IN,jdbcType=VARCHAR},
+			#{freeTime,mode=IN,jdbcType=VARCHAR},
+			#{creator,mode=IN,jdbcType=INTEGER},
+			#{singlePrice,mode=IN,jdbcType=INTEGER},
+			#{minMoneyUnit,mode=IN,jdbcType=INTEGER},
+			#{startMoney,mode=IN,jdbcType=INTEGER},
+			#{id,mode=OUT,jdbcType=INTEGER}
+		)
+	</select> -->
+	<!-- 上网免费时长设置 -->
+	<update id="updFeeTimeSet" parameterType="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+		 update  feePlaceChargeSetup 
+		 				set freeTime = #{freeTime,jdbcType=VARCHAR},
+		 					startMoney = 0.00,
+		 					singleprice = 0.00,
+		 					minMoneyUnit = 0.00,
+		 					status='Y',
+		 					createTime = sysdate
+		 				where placeId =#{placeId,jdbcType=INTEGER}
+	</update>
+	<!-- 修改场所认证方式-->
+	<!-- <update id="updateApprove" parameterType="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+		 update basPlace 
+        	set ctrlCode =  #{placeCtrlCode}
+        	where placeID = #{placeId}
+	</update> -->
+	<!-- 获取场所的Id -->
+	<select id="getPlaceById" parameterType="com.rainsoft.union.web.sysmanage.model.SurfWebSet" resultType="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+		select f.placeId,f.freetime,f.startmoney,f.singleprice,f.minmoneyunit,f.status,f.createtime 
+					from feeplacechargesetup f where f.placeId=#{placeId,jdbcType=INTEGER}
+	</select>
+	<!-- 添加上网免费时长 设置-->
+	<insert id="saveFeeTimeSet" parameterType="com.rainsoft.union.web.sysmanage.model.SurfWebSet">
+		insert into feePlaceChargeSetup(placeId,freeTime,startMoney,singleprice,minMoneyUnit,status,createTime)
+					values(#{placeId},#{freeTime},0.00,0.00,0.00,'Y',sysdate)
+	</insert>
+</mapper>

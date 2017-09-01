@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.dao.ISyncDataDao">
+
+	<insert id="saveAppuserServiceCode">
+		<selectKey resultType="int" order="BEFORE" keyColumn="id" keyProperty="id">
+			SELECT SEQ_APPUSER_SERVICECODE.NEXTVAL AS VALUE FROM DUAL
+		</selectKey>
+		INSERT INTO
+			T_APPUSER_SERVICECODE(ID,EDA_ID,SERVICE_CODE)
+			VALUES(#{id},#{edaId},#{serviceCode})
+	</insert>
+
+	<delete id="deleteAppuserServiceCode">
+		DELETE T_APPUSER_SERVICECODE TAS
+			WHERE TAS.EDA_ID = #{edaId}
+				AND TAS.SERVICE_CODE = #{serviceCode}
+	</delete>
+
+	<select id = "countEdaAccount" parameterType="String" resultType="Integer">
+			SELECT COUNT(*) FROM T_EDA_APP_MEMBERS WHERE EDA_ID = #{edaId}
+	</select>
+			                 
+	<insert id="addEdaAccount">
+		<selectKey resultType="int" order="BEFORE" keyColumn="id" keyProperty="id">
+			SELECT SEQ_EDA_APP_MEMBERS.NEXTVAL AS VALUE FROM DUAL
+		</selectKey>		
+				INSERT INTO T_EDA_APP_MEMBERS
+					  (
+					   ID,
+					   EDA_ID,
+					   USER_NAME,
+					   MOBILE,
+					   NATIONALITY,
+					   LOGIN_PASSWORD,
+					   DEVICE_NAME,
+					   APP_ID,
+					   USER_MAC,
+					   MOBILE_MODEL,
+					   CREATE_TIME,
+					   UPDATE_TIME,
+					   STATUS,
+					   APP_VERSION,
+					   REGISTER_TYPE)
+					VALUES
+					  (#{id},
+					   #{edaId},
+					   #{userName},
+					   #{mobile},
+					   #{nationality},
+					   #{loginPassword},
+					   #{deviceName},
+					   #{appId},
+					   #{userMac},
+					   #{mobileModel},
+					   #{createTime},
+					   #{updateTime},
+					   #{status},
+					   #{appVersion},
+					   #{registerType})
+	</insert>
+	
+	<update id="updateEdaAccount">		
+		UPDATE T_EDA_APP_MEMBERS T 
+			SET 
+				T.EDA_ID =#{edaId},
+				T.USER_NAME=#{userName},
+				T.MOBILE=#{mobile},
+				T.NATIONALITY=#{nationality},
+				T.LOGIN_PASSWORD=#{loginPassword},
+				T.DEVICE_NAME =#{deviceName},
+				T.APP_ID=#{appId},
+				T.USER_MAC=#{userMac},
+				T.MOBILE_MODEL=#{mobileModel},
+				T.UPDATE_TIME=SYSDATE,
+				T.STATUS=#{status},
+				T.APP_VERSION=#{appVersion},
+				T.REGISTER_TYPE=#{registerType}
+				WHERE T.EDA_ID =#{edaId}
+	</update>
+
+	<delete id="deleteEdaAccount">
+		DELETE T_EDA_APP_MEMBERS T
+			WHERE T.EDA_ID = #{edaId}
+	</delete>
+
+	<!-- 同步其他平台用户 -->
+	<select id = "countPlatformUserAccount" parameterType="com.rainsoft.riplat.web.notice.model.PlatformUser" resultType="Integer">
+			SELECT COUNT(*) FROM T_PLATFORM_USER T WHERE T.LOGIN_USERNAME = #{loginUsername} AND T.PLATFORM_ID =#{platformId}
+	</select>
+	
+	<insert id="addPlatformUserAccount">
+		<selectKey resultType="int" order="BEFORE" keyColumn="id" keyProperty="id">
+			SELECT SEQ_PLATFORM_USER.NEXTVAL AS VALUE FROM DUAL
+		</selectKey>		
+			INSERT INTO T_PLATFORM_USER
+		          	(LOGIN_USERNAME,
+		           LOGIN_PASSWORD,
+		           USER_REALNAME,
+		           CREATE_TIME,
+		           UPDATE_TIME,
+		           STATUS,
+		           PLATFORM_ID,
+		           PLATFORM_NAME,
+		           ID,
+		           EDA_ID,
+		           CREATOR,
+		           UPDATOR
+		           )
+		        VALUES
+		          (#{loginUsername},
+		           #{loginPassword},
+		           #{userRealname},
+			       SYSDATE,
+			       SYSDATE,
+		           #{status},
+		           #{platformId},
+		           #{platformName},
+		           #{id},
+		           #{edaId},
+		           #{id},
+		           #{id}
+		           )
+	</insert>
+	
+	<update id="updatePlatformUserAccount">		
+			UPDATE T_PLATFORM_USER T 
+			   SET LOGIN_PASSWORD = #{loginPassword},
+	               USER_REALNAME  = #{userRealname},
+	               UPDATE_TIME    = SYSDATE,
+	               STATUS         = #{status}
+	         WHERE LOGIN_USERNAME = #{loginUsername}
+	           AND PLATFORM_ID = #{platformId}
+	</update>
+
+	<delete id="deletePlatformUserAccount">
+	DELETE FROM T_PLATFORM_USER T WHERE LOGIN_USERNAME = #{loginUsername}
+	           AND PLATFORM_ID = #{platformId}
+	</delete>
+	
+	<select id="getPlatformUserId" resultType="Integer">
+		SELECT ID FROM T_PLATFORM_USER WHERE LOGIN_USERNAME = #{loginUsername}
+	           AND PLATFORM_ID = #{platformId}
+	</select>
+	
+	
+	<insert id="addPlatformUserArea">
+		INSERT INTO T_PLATFORM_USER_AREA
+		          	(USER_ID,
+		           CREATE_TIME,	
+		           AREA_ID
+		           )
+		        VALUES
+		          (#{userId},
+		           #{createTime},
+		           #{areaId})
+	</insert>
+	
+	<delete id="deletePlatformUserArea">
+		DELETE FROM T_PLATFORM_USER_AREA T WHERE USER_ID=#{userId}
+	</delete>
+	
+</mapper>

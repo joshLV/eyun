@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.systemManage.model.Portal">
+	<resultMap type="com.rainsoft.riplat.web.systemManage.model.Portal" id="portalResult">
+		<result property="portalId" column="portalId" />
+	</resultMap>
+
+	<!--场所资料的列表查询 -->
+	<select id="findListBy" parameterType="com.rainsoft.riplat.web.systemManage.model.Portal" resultMap="portalResult">
+		with s as
+		(select placeName, placecode from basplace where memberId = #{userId}),
+		h as
+		(select s.placeName, n.id
+		from basplacedevice n, s
+		where n.placecode = s.placecode)
+		select WMSYS.WM_CONCAT(snh.portalModelID) as portalId,
+		WMSYS.WM_CONCAT(snh.placeDeviceId) as placeDeviceId,
+		snh.portalModelName,
+		snh.isDefault,
+		snh.status,
+		snh.createTime,
+		snh.updateTime,
+		<!--WMSYS.WM_CONCAT(h.placeName) as placeName -->
+		h.placeName as placeName
+		from basportalmodel snh, h
+		where h.id = snh.placedeviceid
+		group by portalModelName,placeName,
+		isDefault,
+		status,
+		pc_backgroud,
+		m_backgroud,
+		logourl,
+		createTime,
+		updateTime
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	<!--userId 获取场所 换方式 -->
+	<select id="getPlace" resultMap="portalResult">
+		with s as
+		(select placeCode, placeName from basplace where memberid = #{userId})
+		select n.id, n.serialnum,n.placecode, s.PLACENAME, n.PL_AD_Num, n.PL_AD_CTRL,n.PD_AD_NUM,n.PD_AD_CTRL,n.ML_AD_NUM,n.ML_AD_CTRl
+		from basplacedevice n, s
+		where n.placecode = s.placecode
+	</select>
+
+	<select id="getPlace1" resultMap="portalResult">
+		select placeCode , placeName from BASPLACE where memberId = #{userId}
+	</select>
+	<!--id 查询修改时间 -->
+	<select id="getUpdateTimeByIds" parameterType="list" resultMap="portalResult">
+		select a.materialId ,updateTime from basportalmodel a where 1=1
+		<if test="list !=null">
+			and a.portalmodelId in
+			<foreach collection="list" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<!-- 测试数组 已通过 -->
+	<select id="test" statementType="CALLABLE">
+		call arraytest(
+		#{arr,mode=IN,jdbcType=ARRAY,javaType=String},<!--jdbcTypeName=varchar_array, -->
+		#{id,mode=OUT,jdbcType=INTEGER}<!--typeHandler=com.rainsoft.common.handler.ArrayTypeHandler -->
+		)
+	</select>
+
+</mapper>

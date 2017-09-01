@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.base.web.system.model.BaseUser">
+
+	<!-- 表名 -->
+	<sql id="tableNameSql">
+		sys_user
+	</sql>
+
+	<!-- 用于select查询、insert的公用抽取的列 -->
+	<sql id="commonSelectColumnsPrefix">
+
+	</sql>
+
+	<!-- 按主键查找条件语句 -->
+	<sql id="conditionOnlyId">
+		id = #{id}
+	</sql>
+
+	<sql id="mainSql">
+		SELECT
+		<include refid="commonSelectColumnsPrefix" />
+		FROM
+		<include refid="tableNameSql" />
+		t
+	</sql>
+	<sql id="varSql">
+		<where>
+			<trim suffixOverrides="and">
+				<!-- mybatis 中模糊查询 like #{name} 这种写法最后查询出来的数据是按照等值查的 模糊查询一共有三种方式： like "%"#{name}"%" 推荐这种写法 like '%'||#{name}||'%' like '%${name}%' # 占位符，有防sql注入的功能 name=#{name}解析出来是 name=? $ 代表解析动态变量 name=${name} 解析出来时name='rainsoft' -->
+				<if test="loginName!=null and loginName!=''">
+					and t.loginName like "%"||#{loginName}||"%"
+				</if>
+				<if test="nickName!=null and nickName!=''">
+					and t.nickName like "%"||#{nickName}||"%"
+				</if>
+				<if test="email!=null and email!=''">
+					and t.email like '%${email}%'
+				</if>
+				<!-- Integer类型也必须这么写，否则会按""的string类型查询 -->
+				<if test="sex!=null and sex!=''">
+					and t.sex=#{sex}
+				</if>
+				<if test="age!=null and age!=''">
+					and t.age=#{age}
+				</if>
+				<if test="idCard!=null and idCard!=''">
+					and t.idCard like "%"#{idCard}"%"
+				</if>
+				<if test="mobile!=null and mobile!=''">
+					and t.mobile like "%"#{mobile}"%"
+				</if>
+				<if test="telPhone!=null and telPhone!=''">
+					and t.telPhone like "%"#{telPhone}"%"
+				</if>
+				<if test="province!=null and province!=''">
+					and t.province= #{province}
+				</if>
+				<if test="city!=null and city!=''">
+					and t.city=#{city}
+				</if>
+				<if test="county!=null and county!=''">
+					and t.county=#{county}
+				</if>
+				<if test="address!=null and address!=''">
+					and t.address like "%"#{address} "%"
+				</if>
+				<if test="delStatue!=null and delStatue!=''">
+					and t.delStatue=#{delStatue}
+				</if>
+				<if test="creator!=null and creator!=''">
+					and t.creator=#{creator}
+				</if>
+				<if test="searchValue!=null and searchValue!=''">
+					and (t.loginName like "%"#{searchValue}"%" or t.nickName like "%"#{searchValue}"%" )
+				</if>
+			</trim>
+		</where>
+	</sql>
+
+	<!-- 功能说明 -->
+	<!-- <select id="findById" parameterType="String" resultMap="BaseUserResultMap"> -->
+	<!-- <include refid="mainSql"/> -->
+	<!-- where <include refid="conditionOnlyId"/> -->
+	<!-- </select> -->
+	
+	<resultMap type="com.rainsoft.base.web.system.model.BaseUser" id="BaseUserResultMap">
+		<result column="id" property="id" jdbcType="INTEGER"/>
+		<result column="name" property="loginName" jdbcType="VARCHAR"/>
+		<result column="another_name" property="anotherName" jdbcType="VARCHAR"/>
+		<result column="account_type" property="accountType" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<select id="login" parameterType="com.rainsoft.base.web.system.model.BaseUser" resultMap="BaseUserResultMap">
+		select * from t_sys_user t where (t.name = #{loginName} or t.another_name=#{loginName}) and t.pwd = #{password} and t.status = 'e'
+	</select>
+
+	<!-- 用户登录，0：失败，成功后返回用户角色及资源列表等相关数据 -->
+<!-- 	<select id="login" statementType="CALLABLE" parameterType="com.rainsoft.base.web.system.model.BaseUser"> -->
+<!-- 		call spusr_memberLogin( -->
+<!-- 		#{loginName,mode=IN,jdbcType=VARCHAR},     会员登录名 -->
+<!-- 		#{password,mode=IN,jdbcType=CHAR},         会员密码（MD5加密）,密文 -->
+<!-- 		#{appID,mode=IN,jdbcType=INTEGER},          若是通过APP客户端注册，则传入APP对应的ID，否则传入null -->
+<!-- 		#{loginIP,mode=IN,jdbcType=VARCHAR},        会员登陆IP -->
+<!-- 		#{loginWay,mode=IN,jdbcType=CHAR},          最后登录方式, 1：web网页; 2：wap网页; 3：手机客户端；4：未知 -->
+<!-- 		#{id,mode=OUT,jdbcType=INTEGER},            返回值：会员的memberID -->
+<!-- 		#{memberType,mode=OUT,jdbcType=CHAR},             返回值：会员类型，1:广告主；2：场所主；3：云辰内部用 -->
+<!-- 		#{loginName,mode=OUT,jdbcType=VARCHAR},     返回值：会员名 -->
+<!-- 		#{anotherName,mode=OUT,jdbcType=VARCHAR},   返回值：会员名 -->
+<!-- 		#{accountType,mode=OUT,jdbcType=VARCHAR},   返回值：会员名 -->
+<!-- 		#{openUrl,mode=OUT,jdbcType=VARCHAR}        返回值：会员名 -->
+<!-- 		) -->
+<!-- 	</select> -->
+	
+<!-- 	<resultMap type="com.rainsoft.base.web.system.model.BaseUser" id="BaseUserResultMap"> -->
+<!-- 		<result column="member_Id" property="id" jdbcType="INTEGER"/> -->
+<!-- 		<result column="member_Name" property="loginName" jdbcType="VARCHAR"/> -->
+<!-- 		<result column="another_Name" property="anotherName" jdbcType="VARCHAR"/> -->
+<!-- 		<result column="account_Type" property="accountType" jdbcType="VARCHAR"/> -->
+<!-- 	</resultMap> -->
+	
+
+
+	<!-- 功能说明 -->
+	<!-- <select id="findItemById" parameterType="String" resultType="com.rainsoft.system.model.BaseUser"> -->
+	<!-- <include refid="mainSql"/> -->
+	<!-- where <include refid="conditionOnlyId"/> -->
+	<!-- </select> -->
+
+	<!-- 功能说明 -->
+	<!-- <select id="findCountBy" parameterType="java.util.Map" resultType="INTEGER"> -->
+	<!-- SELECT -->
+	<!-- COUNT(*) AS C -->
+	<!-- FROM -->
+	<!-- <include refid="tableNameSql"/> -->
+	<!-- <include refid="varSql"/> -->
+	<!-- </select> -->
+
+	<!-- 功能说明 -->
+	<!-- <select id="findRecords" parameterType="sqlAdapter" resultMap="BaseUserResultMap"> -->
+	<!-- ${sql} -->
+	<!-- </select> -->
+
+	<!-- 功能说明 -->
+	<!-- <select id="findListBy" parameterType="java.util.Map" resultMap="BaseUserResultMap"> -->
+	<!-- <include refid="mainSql"/> -->
+	<!-- <include refid="varSql"/> -->
+	<!-- <if test="SORT != null and SORT != ''"> -->
+	<!-- order by ${SORT} -->
+	<!-- <if test="DIR != null and DIR != ''"> -->
+	<!-- ${DIR} -->
+	<!-- </if> -->
+	<!-- </if> -->
+	<!-- </select> -->
+
+	<!-- 功能说明 -->
+	<insert id="save" parameterType="com.rainsoft.base.web.system.model.BaseUser">
+		insert into
+		<include refid="tableNameSql" />
+		(
+		<include refid="commonSelectColumnsPrefix" />
+		)
+		values
+		(
+		#{id, jdbcType=VARCHAR} ,
+		#{loginName, jdbcType=VARCHAR} ,
+		#{password, jdbcType=VARCHAR} ,
+		#{nickName, jdbcType=VARCHAR},
+		#{email, jdbcType=VARCHAR},
+		#{sex, jdbcType=INTEGER},
+		#{age, jdbcType=INTEGER},
+		#{birthday, jdbcType=TIMESTAMP} ,
+		#{idCard, jdbcType=VARCHAR},
+		#{mobile, jdbcType=VARCHAR},
+		#{telPhone, jdbcType=VARCHAR},
+		#{province, jdbcType=VARCHAR},
+		#{city, jdbcType=VARCHAR},
+		#{county, jdbcType=VARCHAR},
+		#{address, jdbcType=VARCHAR},
+		#{creator, jdbcType=VARCHAR} ,
+		#{updator, jdbcType=VARCHAR} ,
+		#{created, jdbcType=TIMESTAMP} ,
+		#{updated, jdbcType=TIMESTAMP} ,
+		#{sort, jdbcType=INTEGER} ,
+		#{remark, jdbcType=VARCHAR} ,
+		#{status, jdbcType=INTEGER} ,
+		#{delStatue, jdbcType=INTEGER}
+		)
+	</insert>
+
+	<!-- 功能说明 -->
+	<update id="update" parameterType="com.rainsoft.base.web.system.model.BaseUser">
+		update
+		<include refid="tableNameSql" />
+		set
+		<!-- <trim prefix="values (" suffix=")" suffixOverrides="," > -->
+		<trim suffixOverrides=",">
+			<if test="loginName!=null and loginName!=''">
+				loginName=#{loginName, jdbcType=VARCHAR} ,
+			</if>
+			<if test="password!=null and password!=''">
+				password=#{password, jdbcType=VARCHAR} ,
+			</if>
+			<if test="nickName!=null and nickName!=''">
+				nickName=#{nickName, jdbcType=VARCHAR},
+			</if>
+			<if test="email!=null and email!=''">
+				email=#{email, jdbcType=VARCHAR},
+			</if>
+			<if test="sex!=null and sex!=''">
+				sex=#{sex, jdbcType=INTEGER},
+			</if>
+			<if test="age!=null and age!=''">
+				age=#{age, jdbcType=INTEGER},
+			</if>
+			<if test="birthday!=null and birthday!=''">
+				birthday=#{birthday, jdbcType=VARCHAR},
+			</if>
+			<if test="idCard!=null and idCard!=''">
+				idCard=#{idCard, jdbcType=VARCHAR},
+			</if>
+			<if test="mobile!=null and mobile!=''">
+				mobile=#{mobile, jdbcType=VARCHAR},
+			</if>
+			<if test="telPhone!=null and telPhone!=''">
+				telPhone=#{telPhone, jdbcType=VARCHAR},
+			</if>
+			<if test="province!=null and province!=''">
+				province=#{province, jdbcType=VARCHAR},
+			</if>
+			<if test="city!=null and city!=''">
+				city=#{city, jdbcType=VARCHAR},
+			</if>
+			<if test="county!=null and county!=''">
+				county=#{county, jdbcType=VARCHAR},
+			</if>
+			<if test="address!=null and address!=''">
+				address=#{address, jdbcType=VARCHAR},
+			</if>
+			<if test="updator!=null and updator!=''">
+				updator=#{updator, jdbcType=VARCHAR} ,
+			</if>
+			<if test="updated!=null and updated!=''">
+				updated=#{updated, jdbcType=TIMESTAMP} ,
+			</if>
+			<if test="sort!=null and sort!=''">
+				sort=#{sort, jdbcType=INTEGER} ,
+			</if>
+			<if test="remark!=null and remark!=''">
+				remark=#{remark, jdbcType=VARCHAR} ,
+			</if>
+			<if test="status!=null and status!=''">
+				status=#{status, jdbcType=INTEGER} ,
+			</if>
+			<if test="delStatue!=null and delStatue!=''">
+				delStatue=#{delStatue, jdbcType=INTEGER},
+			</if>
+		</trim>
+		where
+		<include refid="conditionOnlyId" />
+	</update>
+
+	<!-- 功能说明 -->
+	<delete id="deleteByIds">
+		delete from
+		<include refid="tableNameSql" />
+		where id in
+		<foreach index="index" item="item" collection="array" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<!-- 功能说明 -->
+	<delete id="deleteById" parameterType="Object">
+		delete from
+		<include refid="tableNameSql" />
+		where
+		<include refid="conditionOnlyId" />
+	</delete>
+</mapper>

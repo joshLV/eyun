@@ -1,0 +1,330 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.eyun</groupId>
+    <artifactId>eyun-root</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    
+    <name>eyun-root</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.7</java.version>
+        <!-- spring版本号 -->
+        <spring.version>4.3.2.RELEASE</spring.version>
+        <!-- mybatis版本号 -->
+        <mybatis.version>3.3.0</mybatis.version>
+    </properties>
+    
+    <dependencies>
+<!--       <dependency> -->
+<!--             <groupId>javax</groupId> -->
+<!--             <artifactId>javaee-api</artifactId> -->
+<!--             <version>7.0</version> -->
+<!--         </dependency> -->
+        <!-- spring核心包 -->
+        <!-- springframe start -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-oxm</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+            <version>1.8.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.8.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <!-- springframe end -->
+    
+        <!-- c3p0 -->
+        <dependency> 
+            <groupId>c3p0</groupId> 
+            <artifactId>c3p0</artifactId> 
+            <version>0.9.1</version>   
+        </dependency>
+        
+        <!-- 添加oracle jdbc driver -->  
+<!--        <dependency> -->
+<!--            <groupId>com.oracle</groupId> -->
+<!--            <artifactId>ojdbc</artifactId> -->
+<!--            <version>10.1.0.2.0</version> -->
+<!--        </dependency> -->
+        
+        <dependency>
+          <groupId>ojdbc</groupId>
+          <artifactId>ojdbc</artifactId>
+          <version>11.0.1</version>
+        </dependency>
+        <!-- mybatis核心包 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>${mybatis.version}</version>
+        </dependency>
+        <!-- mybatis/spring包 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+        <!-- junit测试包 -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- json数据 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+        <!-- 日志文件管理包 -->
+        <!-- log start -->
+        <!-- logback+slf4j -->  
+        <dependency>  
+            <groupId>org.slf4j</groupId>  
+            <artifactId>slf4j-api</artifactId>  
+            <version>1.6.0</version>  
+            <type>jar</type>  
+            <scope>compile</scope>  
+        </dependency>  
+        <dependency>  
+            <groupId>ch.qos.logback</groupId>  
+            <artifactId>logback-core</artifactId>  
+            <version>0.9.28</version>  
+            <type>jar</type>  
+        </dependency>  
+        <dependency>  
+            <groupId>ch.qos.logback</groupId>  
+            <artifactId>logback-classic</artifactId>  
+            <version>0.9.28</version>  
+            <type>jar</type>  
+        </dependency>
+        <!-- log end -->
+        
+        <!-- HttpServletRequest、HttpServletResponse -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.0.1</version>
+            <scope>provided</scope>  
+        </dependency>
+        
+        <!--        httpclient  4.2.5   -->
+        <dependency> 
+            <groupId>org.apache.httpcomponents</groupId> 
+            <artifactId>httpclient</artifactId> 
+            <version>4.2.5</version>         
+        </dependency> 
+        <dependency> 
+            <groupId>org.apache.httpcomponents</groupId> 
+            <artifactId>httpclient-cache</artifactId> 
+            <version>4.2.5</version>         
+        </dependency> 
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.2.5</version>         
+        </dependency>
+        <!-- httpclient支付依赖包 -->
+        <dependency>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
+			<version>3.1</version>
+		</dependency>
+        <!--JSTL-->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+            <version>1.2</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--FileUpload-->
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.3.1</version>
+        </dependency>
+        <!--ftp-->
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>3.3</version>
+        </dependency>
+        
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>19.0</version>
+		</dependency>
+
+        <!-- 加密库 rsa算法需要的-->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk14</artifactId>
+            <version>1.38</version>
+        </dependency>
+    </dependencies>
+    
+  <build>
+      <resources>
+          <resource>
+              <directory>src/main/resources</directory>
+              <!-- 资源根目录排除各环境的配置，使用单独的资源目录来指定 -->
+              <excludes>
+                  <!--测试环境-->
+                  <exclude>conf/test/*</exclude>
+                  <!--生产环境-->
+                  <exclude>conf/production/*</exclude>
+                  <!--开发环境-->
+                  <exclude>conf/development/*</exclude>
+              </excludes>
+          </resource>
+          <resource>
+              <directory>src/main/resources/conf/${profiles.active}</directory>
+              <targetPath>conf</targetPath>
+          </resource>
+      </resources>
+      <plugins>
+          <!-- compiler插件, 设定JDK版本 -->
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <version>3.3</version>
+              <configuration>
+                  <source>${java.version}</source>
+                  <target>${java.version}</target>
+                  <showWarnings>true</showWarnings>
+                  <encoding>${project.build.sourceEncoding}</encoding>
+                  <compilerArguments>  
+                        <verbose />  
+                        <bootclasspath>${java.home}/lib/rt.jar;${java.home}/lib/jce.jar</bootclasspath>  
+                  </compilerArguments>
+              </configuration>
+          </plugin>
+          <!-- 解决maven命令console出现中文乱码 -->
+               <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.7.2</version>
+                    <configuration>
+                         <forkMode>once</forkMode>
+                         <argLine>-Dfile.encoding=UTF-8</argLine>
+                        <skipTests>true</skipTests>
+                    </configuration>
+               </plugin>
+      </plugins>
+      <defaultGoal>compile</defaultGoal>
+<!--       <finalName>eyun-root</finalName> -->
+  </build>
+    
+    <modules>
+        <module>eyun-base-common</module>
+        <module>eyun-union-base</module>
+        <module>eyun-union-web</module>
+        <module>eyun-riplat-web</module>
+    </modules>
+    
+    <distributionManagement>
+        <!-- 两个ID必须与 setting.xml中的<server><id>nexus-releases</id></server>保持一致-->
+       <repository>
+           <id>nexus-releases</id>
+           <url>http://192.168.30.213:8081/nexus/content/repositories/releases/</url>
+       </repository>
+       
+       <snapshotRepository>
+           <id>nexus-snapshots</id>
+           <url>http://192.168.30.213:8081/nexus/content/repositories/snapshots/</url>
+       </snapshotRepository>
+    </distributionManagement>
+    <!--profiles-->
+    <profiles>
+        <profile>
+            <!--生产环境-->
+            <id>production</id>
+            <properties>
+                <profiles.active>production</profiles.active>
+            </properties>
+        </profile>
+
+        <profile>
+            <!--测试环境-->
+            <id>test</id>
+            <properties>
+                <profiles.active>test</profiles.active>
+            </properties>
+        </profile>
+
+        <profile>
+            <!--本地环境-->
+            <id>development</id>
+            <properties>
+                <profiles.active>development</profiles.active>
+            </properties>
+            <activation>
+                <!--默认是本地环境-->
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+    </profiles>
+    
+</project>

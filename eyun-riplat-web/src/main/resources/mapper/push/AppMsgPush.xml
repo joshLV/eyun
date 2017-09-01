@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.push.model.AppToken">
+	<resultMap type="com.rainsoft.riplat.web.push.model.AppToken" id="appTokenMap">
+		<result column="id" property="id" />
+		<result column="eda_id" property="edaId" />
+		<result column="mobile_token" property="mobileToken" />
+		<result column="notify_platform" property="notifyPlatform" />
+	</resultMap>
+	
+	<!-- 同一易达号同一平台类型，有则更新没有就插入 -->
+	<insert id="update" parameterType="com.rainsoft.riplat.web.push.model.AppToken">
+		merge into t_eda_app_token a
+		using (select #{edaId} eda_id, #{notifyPlatform} notify_platform from dual) b
+		on (a.eda_id = b.eda_id)
+		when matched then
+			update set mobile_token = #{mobileToken}, notify_platform = #{notifyPlatform}
+		when not matched then
+			insert(id, eda_id, mobile_token, notify_platform) values(seq_eda_app_token.nextval, #{edaId}, #{mobileToken}, #{notifyPlatform})
+	</insert>
+	
+	<!-- 根据平台类型查找token -->
+	<select id="getTokenList" parameterType="com.rainsoft.riplat.web.push.model.AppToken" resultMap="appTokenMap">
+		select * from t_eda_app_token where mobile_token is not null and eda_id in
+		<foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+			#{item.edaId}
+		</foreach>
+	</select>
+</mapper>

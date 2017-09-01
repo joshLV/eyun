@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.systemManage.model.AccountManage">
+	<resultMap type="com.rainsoft.riplat.web.systemManage.model.AccountManage" id="AccountManageResultMap">
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="VARCHAR" />
+		<result column="updator" property="updator" jdbcType="VARCHAR" />
+		<result column="createtime" property="createTime" jdbcType="DATE" />
+		<result column="updatetime" property="updateTime" jdbcType="DATE" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+
+		<result column="membername" property="loginName" jdbcType="VARCHAR" />
+		<result column="placeid" property="placeid" jdbcType="VARCHAR" />
+		<result column="deviceid" property="deviceid" jdbcType="VARCHAR" />
+		<result column="registerDate" property="registerDate" jdbcType="VARCHAR" />
+		<result column="memberId" property="userId" jdbcType="INTEGER" />
+		<result column="nickName" property="nickName" jdbcType="VARCHAR" />
+		<result column="currentPassword" property="currentPassword" jdbcType="VARCHAR" />
+		<result column="currentMemberId" property="currentMemberId" jdbcType="VARCHAR" />
+		<result column="result" property="result" jdbcType="INTEGER" />
+
+		<result column="userId" property="userId" jdbcType="INTEGER" />
+		<result column="payPassword" property="payPassword" jdbcType="VARCHAR" />
+		<result column="currentPwd" property="currentPwd" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 表名 <sql id="tableNameSql"> usrmemberlogin,usrMemberBase,basplace,basdevice </sql> -->
+	<!-- 账户管理 mapper usrmemberlogin.memberid parentmemberid -->
+	<!-- 根据会员ID查询管理的所属账号 -->
+	<select id="findListBy" resultMap="AccountManageResultMap">
+		select
+		a.memberid ,
+		min(a.membername) as loginName,
+		count(b.placeid) as placeid,
+		count(c.deviceid) as deviceid,
+		min(a.registerDate) as registerDate,
+		min(a.creator) as creator,
+		min(a.updator) as updator,
+		min(a.remark) as remark
+		from
+		(select
+		usrmemberlogin.memberid,
+		usrmemberlogin.membername,
+		to_char(a.usrMemberBase.Createtime, 'yyyy/MM/dd hh24:mi:ss')as registerDate,
+		usrmemberlogin.creator,
+		usrmemberlogin.updator,
+		usrmemberlogin.remark
+		from
+		usrmemberlogin
+		left join usrMemberBase
+		on usrMemberBase.Memberid =
+		usrmemberlogin.memberid
+		where parentmemberid = #{userId}) a
+		left
+		join basplace b
+		on a.memberid = b.memberid
+		left join basdevice c
+		on
+		c.placeid = b.placeid
+		group by a.memberid
+	</select>
+
+	<!-- 绑定帐号 -->
+	<select id="callBindingAccount" statementType="CALLABLE">
+		{call
+		SPBAS_ACCOUNT_MANAGE(
+		#{userId,mode=IN,jdbcType=INTEGER},
+		#{currentMemberId,mode=IN,jdbcType=INTEGER},
+		#{currentPassword,mode=IN,jdbcType=VARCHAR},
+		#{result,mode=OUT,jdbcType=INTEGER})}
+	</select>
+
+	<!-- 根据当前会员id解绑账号 -->
+	<select id="update" parameterType="java.util.Map">
+		update usrmemberlogin set parentmemberid = 0,updator=#{id},updatetime=sysdate,remark='解绑账号操作' where memberid = #{userId}
+	</select>
+
+	<!--设置当前会员别名 -->
+	<select id="updateNickName" parameterType="java.util.Map">
+		update usrmemberlogin set anothername=#{nickName},updator=#{id},updatetime=sysdate,remark=#{remark} where memberid=#{userId}
+	</select>
+
+	<!--查询会员别名 -->
+	<select id="findById" resultType="com.rainsoft.riplat.web.systemManage.model.AccountManage">
+		select anothername nickName from usrmemberlogin where memberid = #{userId}
+	</select>
+
+	<!--设置密码 查询用户是否有设置支付密码,没有 则添加 -->
+	<select id="save" resultType="INTEGER">
+		insert into bllAccountInfo (memberID, totalMoney, totalBuyWWBiFee,totalUseWWBiFee,
+		status,totalPoint,totalUsePoint,totalGiveWWBiFee,totalUseGiveWWBiFee,paypwd,creator,
+		createtime,remark)
+		values (#{userId}, 0, 0, 0, 'Y',0,0,0,0,#{payPassword},#{userId},sysdate,#{remark})
+	</select>
+
+	<!--设置密码 查询用户是否有设置支付密码,有 则修改 -->
+	<select id="updatePayPwd" resultType="INTEGER">
+		update bllAccountInfo set paypwd = #{payPassword},updator=#{userId},updatetime=sysdate,
+		remark=#{remark} where memberID = #{userId}
+	</select>
+
+	<!--查询当前会员支付密码 -->
+	<select id="findPayPwd" resultMap="AccountManageResultMap">
+		select a.memberID userId, a.payPwd payPassword from bllAccountInfo a where a.memberID = #{userId}
+	</select>
+
+	<!-- 判断当前用户输入密码是否正确 -->
+	<select id="findCountBy" resultType="Integer">
+		select count(*) from bllAccountInfo a where a.memberID = #{userId} and payPwd = #{currentPwd}
+	</select>
+</mapper>

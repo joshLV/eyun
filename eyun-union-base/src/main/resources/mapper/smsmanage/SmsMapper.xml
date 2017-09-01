@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.smsmanage.model.SmsManage">
+
+    <resultMap type="com.rainsoft.union.web.smsmanage.model.SmsManage" id="smsUseRecordResult">
+ 		<result property="useMoney" column="usewwbimoney"/>
+ 		<result property="placeId" column="placeId"/>
+ 		<result property="placeCode" column="placecode"/>
+ 		<result property="placeName" column="placename"/>
+ 		<result property="sendDate" column="senddate"/>
+ 		<result property="smsNum" column="smsnum"/>
+ 		<result property="smsType" column="smstype"/>
+ 		<result property="contentId" column="contentid"/>
+ 		<result property="accountBal" column="accountBal"/>
+ 	</resultMap>
+	
+	<!-- 查询短信使用记录-->
+	<select id="getSmsUseRecord" resultMap="smsUseRecordResult">
+			with c as (
+				select a.placeID as "placeId", b.placeName as "placeName", b.placeCode as "placeCode", a.smsNum as "smsNum" , TO_DATE(TO_CHAR(a.sendDate, 'yyyy-MM-dd HH24:mi:ss'),'yyyy-MM-dd HH24:mi:ss') as "sendDate"  
+				from  
+				(select placeid, smsnum, senddate
+                       from bllplacesmsrecorddaily <!-- 场所短信发送记录日报表 -->
+                    union all 
+                       select placeid,
+                              count(smsrecordid) smsnum,
+                              trunc(sendtime) senddate
+                         from bllplacesmsrecord <!-- 场所短信发送记录表  -->
+                        where status = 'Y' 
+                        group by trunc(sendtime), placeid
+                ) a,
+				basPlace b 
+				where a.placeid = b.placeid
+				<if test="placeCode != null and placeCode != -1">
+					and b.placeCode = #{placeCode} 
+				</if>
+				<if test="startTime != null and startTime != ''">
+					and a.sendDate &gt;= to_date(#{startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+				</if>
+				<if test="endTime != null and endTime != ''">
+					and a.sendDate &lt;= to_date(#{endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+				</if> 
+				and b.memberId = #{userId} 
+				order by a.senddate desc, a.placeid desc
+			)
+		<if test="forCount=='dateRange'">
+			select max("sendDate") as endTime,min("sendDate") as startTime
+  				from (select distinct c."placeCode",
+                        c."placeName",
+                        c."smsNum",
+                        TO_CHAR(c."sendDate", 'yyyy/MM/dd') as "sendDate"
+          	   			from c
+          	   <where>
+				<include refid="common.filters" />
+			   </where> 
+          	   ) t
+		</if>
+		<if test="forCount=='smsNum'">
+			select sum(t."smsNum") as total
+  			from (select distinct c."placeCode",
+                        c."placeName",
+                        c."smsNum",
+                        TO_CHAR(c."sendDate", 'yyyy/MM/dd') as "sendDate"
+            			from c
+            <where>
+				<include refid="common.filters" />
+			</where>
+            ) t
+		</if>
+		<if test="forCount=='record'">
+			select distinct c."placeCode",c."placeId",c."placeName",c."smsNum",TO_CHAR(c."sendDate", 'yyyy/MM/dd') as "sendDate" from c 
+	    <where>
+			<include refid="common.filters" />
+		</where> 
+		</if>
+	</select>
+	<!-- 场所短信使用明细查询 -->
+ 	<select id="smsUseDetail" resultMap="smsUseRecordResult">
+		select a.mobile, a.smsType, a.contentID, to_char(a.sendTime,'yyyy/mm/dd hh24:mi:ss') sendDate 
+			from (select placeID, mobile, smsType, contentID, sendTime 
+				  from bllPlaceSMSRecord where status = 'Y'
+			union all
+				 select placeID, mobile, smsType, contentID, sendTime 
+				 from bllPlaceSMSRecordHis where status = 'Y') a
+		where 1=1
+	    <if test="placeId != null and placeId != ''">
+	  	   and a.placeID = #{placeId}
+	    </if>
+	    <if test="sendDate != null and sendDate != ''">
+	  	   and to_char(a.sendTime,'yyyy/MM/dd')  =  #{sendDate}
+	    </if>
+		order by a.sendTime desc
+ 	</select>
+	
+	<!-- 查询短信购买记录-->
+	<select id="getSmsBuyRecord" resultType="java.util.Map">
+	  with c as (select (case
+            when a.placeName is null then
+             cast('未分配场所' as nvarchar2(10))
+            else
+             a.placeName
+          end) as "placeName",
+          a.placeCode as "placeCode",
+          a.usewwbimoney as "useWwbiMoney",
+          TO_DATE(to_char(a.opttime, 'yyyy-MM-dd HH24:mi:ss'),'yyyy-MM-dd HH24:mi:ss') as "sendDate",
+          a.smsnumber as "smsNumber",
+          a.smstype as "smsType" 
+     from (select ROWNUM RN,
+                  a.placename,
+                  a.placecode,
+                  a.usewwbimoney,
+                  a.opttime,
+                  a.smsnumber,
+                  a.smstype
+             from (select c.placename,
+                          c.placecode,
+                          a.usewwbimoney,
+                          a.opttime,
+                          b.smsnumber,
+                          b.smstype
+                     from bllusewwbirecords a<!-- 账户支出记录表 -->
+                    inner join BllPlaceSmsBuyRecords b <!-- 场所短信购买记录表 -->
+                       on a.usewwbirecordid = b.usewwbirecordid
+                  <if test="placeId == null or placeId == -1"> left </if>
+                     join basplace c
+                       on a.placeid = c.placeid
+                    where a.usetype = '1'
+                      and (a.memberid = #{userId} or
+                          a.memberid in
+                          (select id from t_sys_user<!-- 系统用户会员表 --> where parent_id = #{userId}))
+                          <if test="placeCode != null and placeCode != -1">
+							 and c.placeCode = #{placeCode}  
+						  </if>
+						  <if test="startTime != null and startTime != ''">
+							 and a.opttime &gt;= to_date(#{startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+						  </if>
+						  <if test="endTime != null and endTime != ''">
+					 		 and a.opttime &lt;= to_date(#{endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+				          </if>  
+                    order by a.usewwbirecordid desc) a) a)
+                select c."placeCode",c."placeName",c."useWwbiMoney",c."smsNumber",c."smsType",TO_CHAR(c."sendDate", 'yyyy-MM-dd HH24:mi:ss') as "sendDate" from c 
+                <where>
+					<include refid="common.filters" />
+				</where> 
+    </select>
+    
+  
+ 	<!--  	根据会员ID和场所ID查询剩余短信数 -->
+ 	<select id="getSurplusSms" resultMap="smsUseRecordResult">
+  		   select sum(sr.totalbuysmsnum) - sum(sr.totalusesmsnum) "smsNum"
+			  from bllsmsremain sr
+			  where sr.smstype = '01'
+			 <if test="placeId != null and placeId != -1">
+               and sr.placeId = #{placeId}
+             </if>
+			   and exists (select 1
+			          from basplace bpi,
+			               t_place_user_related pur,
+			               t_sys_user su
+			         where bpi.placecode = pur.place_code
+			           and pur.user_id = su.id
+			           and sr.placeid = bpi.placeid
+			           and su.id = #{userId})
+ 	</select>
+	
+	 <!-- 查询当前会员的未分配短信余额 -->
+ 	<select id="getUnassignedSmsSurplus" resultType="java.math.BigDecimal">
+ 		select (case
+         when smr.totalbuysmsnum is null then 
+           0
+           else
+          totalbuysmsnum
+       	  end) as totalBuySMSNum
+		  from t_sys_user su
+		  left join bllmembersmsremain smr
+		    on su.id = smr.MEMBERID
+		 where su.id = #{userId}
+ 	</select>
+ 	
+ 	<!--查询会员短信情况表bllMemberSMSRemain  -->
+ 	<select id="getMemberSmsRemain" resultMap="smsUseRecordResult">
+		 select b.totalbuysmsnum smsNum from bllMemberSMSRemain b where b.memberid = #{userId}
+ 	</select>
+ 	
+ 	<!--查询会员短信余额表bllSMSRemain  -->
+ 	<select id="getbllSmsRemain" resultMap="smsUseRecordResult">
+		 select b.placeID,b.totalBuyWwbiFee useWwbiMoney,b.totalBuySMSNum smsNum from 
+		 bllSMSRemain b where b.placeID = #{placeId} and b.smsType = #{smsType}
+ 	</select>
+    
+ 	 
+    <!-- bigin（20150731更新）如果场所为-1或null，则将消费旺旺币金额累加到[209]会员短信情况表中  bllMemberSMSRemainc（若原来无记录，则新增）-->
+ 	<update id="updateMemberSmsRemain">
+         update bllMemberSMSRemain a set a.totalBuySMSNum = #{smsNum} where a.memberID = #{userId}
+ 	</update>
+ 	<insert id="insertMemberSmsRemain">
+		insert into bllMemberSMSRemain (a.memberSmsID, a.memberID, a.smsType, a.totalBuySMSNum, a.totalUseSMSNum)
+		values (seq_memberSmsID.Nextval,#{userId},#{smsType},#{smsNum},0) 	
+ 	</insert>
+ 	<!-- end（20150731更新）如果场所为-1或null，则将消费旺旺币金额累加到[209]会员短信情况表中 （若原来无记录，则新增）-->
+ 	
+ 	
+     <!-- 若购买的是短信，则将消费旺旺币金额累加到 会员短信余额情况表中 bllSMSRemain（若原来无记录，则新增）  -->  
+ 	<update id="updateBllSmsRemain">
+        update bllSMSRemain a set a.totalBuyWWBiFee = #{useMoney},<!-- 总购买的短信使用金额 -->
+                                  a.totalBuySMSNum = #{smsNum} <!-- 总购买的短信数量 -->
+                                  where a.placeID =#{placeId} and a.smsType = #{smsType}
+ 	</update>
+ 	
+ 	<insert id="insertBllSmsRemain">
+ 		insert into bllSMSRemain a (a.SMSRemainID,a.placeID,a.smsType, a.totalBuyWWBiFee,
+                               a.totalBuySMSNum,a.totalUseSMSNum,a.SMSFee,a.SMSFeeOwnerFlag)
+ 		values(Seq_SMSRemainID.Nextval,#{placeId},#{smsType},#{useMoney},#{smsNum},0,0,'s')
+ 	</insert>
+ 	
+ 	
+ 	<!--  4、往[208]场所短信购买记录表 插入一条记录 -->
+ 	<insert id="insertPlaceSmsBuyRecords">
+ 		insert into bllPlaceSMSBuyRecords (useWWBiRecordID, smsNumber, smsType,synStatus)
+ 		values(#{id},#{smsNum},#{smsType},'N')
+ 	</insert>
+ 	
+</mapper>

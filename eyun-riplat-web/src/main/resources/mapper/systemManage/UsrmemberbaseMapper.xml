@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd</SPAN>">
+<mapper namespace="com.rainsoft.riplat.web.systemManage.model.Usrmemberbase">
+	<resultMap type="com.rainsoft.riplat.web.systemManage.model.Usrmemberbase" id="UsrmemberbaseResultMap">
+		<result column="memberid" property="memberid" jdbcType="INTEGER" />
+		<result column="memberrealname" property="memberrealname" jdbcType="VARCHAR" />
+		<result column="tel" property="tel" jdbcType="VARCHAR" />
+		<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+		<result column="areaid" property="areaid" jdbcType="VARCHAR" />
+		<result column="addr" property="addr" jdbcType="VARCHAR" />
+		<result column="email" property="email" jdbcType="VARCHAR" />
+		<result column="headimgurl" property="headimgurl" jdbcType="VARCHAR" />
+		<result column="verstatus" property="verstatus" jdbcType="VARCHAR" />
+		<result column="ctrlcode" property="ctrlcode" jdbcType="VARCHAR" />
+		<result column="createtime" property="createtime" jdbcType="VARCHAR" />
+		<result column="edittime" property="edittime" jdbcType="VARCHAR" />
+		<result column="zip" property="zip" jdbcType="VARCHAR" />
+		<result column="cardtype" property="cardtype" jdbcType="VARCHAR" />
+		<result column="cardid" property="cardid" jdbcType="VARCHAR" />
+		<result column="ctrlcode" property="ctrlcode" jdbcType="VARCHAR" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+	</resultMap>
+
+	<!-- 表名 -->
+	<sql id="tableNameSql">
+		usrmemberbase
+	</sql>
+
+	<!-- 用于select查询、insert的公用抽取的列 -->
+	<sql id="commonSelectColumnsPrefix">
+		memberid,memberrealname,tel,mobile,areaid,addr,email,headimgurl,verstatus,
+		ctrlcode,createtime,edittime,zip,cardtype,cardid,sort
+	</sql>
+
+	<!-- 按主键查找条件语句 -->
+	<sql id="conditionOnlyId">
+		memberid = #{memberid}
+	</sql>
+
+	<sql id="mainSql">
+		SELECT
+		<include refid="commonSelectColumnsPrefix" />
+		FROM
+		<include refid="tableNameSql" />
+		t
+	</sql>
+	<sql id="varSql">
+		<where>
+			<trim suffixOverrides="and">
+				<!-- mybatis 中模糊查询 like #{name} 这种写法最后查询出来的数据是按照等值查的 模糊查询一共有三种方式： like "%"#{name}"%" 推荐这种写法 like '%'||#{name}||'%' like '%${name}%' # 占位符，有防sql注入的功能 name=#{name}解析出来是 name=? $ 代表解析动态变量 name=${name} 解析出来时name='rainsoft' -->
+				<if test="memberid!=null and memberid!=''">and t.memberid =#{memberid}</if>
+				<if test="memberrealname!=null and memberrealname!=''">and t.memberrealname like "%"||#{memberrealname}||"%"</if>
+				<if test="tel!=null and tel!=''">and t.tel like '%${tel}%'</if>
+				<!-- Integer类型也必须这么写，否则会按""的string类型查询 -->
+				<if test="mobile!=null and mobile!=''">and t.mobile like "%"#{mobile}"%"</if>
+				<if test="areaid!=null and areaid!=''">and t.areaid like "%"#{areaid}"%"</if>
+				<if test="addr!=null and addr!=''">and t.addr like "%"#{addr}"%"</if>
+				<if test="email!=null and email!=''">and t.email= #{email}</if>
+				<if test="headimgurl!=null and headimgurl!=''">and t.headimgurl=#{headimgurl}</if>
+				<if test="verstatus!=null and verstatus!=''">and t.verstatus like "%"#{verstatus} "%"</if>
+				<if test="ctrlcode!=null and ctrlcode!=''">and t.ctrlcode=#{ctrlcode}</if>
+				<if test="createtime!=null and createtime!=''">and t.createtime=#{createtime}</if>
+				<if test="edittime!=null and edittime!=''">and t.edittime=#{edittime}</if>
+				<if test="zip!=null and zip!=''">and t.zip=#{zip}</if>
+				<if test="cardtype!=null and cardtype!=''">and t.cardtype=#{cardtype}</if>
+				<if test="cardid!=null and cardid!=''">and t.cardid=#{cardid}</if>
+			</trim>
+		</where>
+	</sql>
+
+	<select id="findPageBy" parameterType="java.util.Map" resultMap="UsrmemberbaseResultMap">
+		<include refid="mainSql" />
+		<include refid="varSql" />
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+			<if test="DIR != null and DIR != ''">
+				${DIR}
+			</if>
+		</if>
+	</select>
+
+	<select id="findById" parameterType="String" resultMap="UsrmemberbaseResultMap">
+		<include refid="mainSql" />
+		where
+		<include refid="conditionOnlyId" />
+	</select>
+
+	<select id="findCountBy" parameterType="java.util.Map" resultType="INTEGER">
+		SELECT COUNT(*) AS C FROM
+		<include refid="tableNameSql" />
+		<include refid="varSql" />
+	</select>
+	<select id="findListBy" parameterType="java.util.Map" resultMap="UsrmemberbaseResultMap">
+		select * from usrmemberbase <!-- where <include refid="conditionOnlyId"/> -->
+
+		<!-- <if test="SORT != null and SORT != ''">order by ${SORT}</if> <if test="DIR != null and DIR != ''">${DIR}</if> -->
+	</select>
+
+	<!-- 功能说明 -->
+	<insert id="save" parameterType="com.rainsoft.riplat.web.systemManage.model.Usrmemberbase">
+		insert into
+		<include refid="tableNameSql" />
+		(
+		<include refid="commonSelectColumnsPrefix" />
+		)
+		values
+		(
+		#{memberid, jdbcType=VARCHAR} ,#{memberrealname, jdbcType=VARCHAR} ,#{tel, jdbcType=VARCHAR} ,
+		#{mobile, jdbcType=VARCHAR},#{areaid, jdbcType=VARCHAR},#{addr, jdbcType=INTEGER},
+		#{email, jdbcType=INTEGER},#{headimgurl, jdbcType=TIMESTAMP} ,#{verstatus, jdbcType=VARCHAR},
+		#{ctrlcode, jdbcType=VARCHAR},#{createtime, jdbcType=VARCHAR},#{edittime, jdbcType=VARCHAR},
+		#{zip, jdbcType=VARCHAR} , #{cardtype, jdbcType=VARCHAR} ,#{cardid, jdbcType=TIMESTAMP} ,
+		)
+	</insert>
+
+	<!-- 功能说明 -->
+	<update id="update" parameterType="com.rainsoft.riplat.web.systemManage.model.Usrmemberbase">
+		update
+		<include refid="tableNameSql" />
+		set
+		<!-- <trim prefix="values (" suffix=")" suffixOverrides="," > -->
+		<trim suffixOverrides=",">
+			<if test="memberid!=null and memberid!=''">memberid=#{memberid, jdbcType=VARCHAR} ,</if>
+			<if test="memberrealname!=null and memberrealname!=''">memberrealname=#{memberrealname, jdbcType=VARCHAR} ,</if>
+			<if test="tel!=null and tel!=''">tel=#{tel, jdbcType=VARCHAR},</if>
+			<if test="mobile!=null and mobile!=''">mobile=#{mobile, jdbcType=VARCHAR},</if>
+			<if test="areaid!=null and areaid!=''">areaid=#{areaid, jdbcType=VARCHAR},</if>
+			<if test="addr!=null and addr!=''">addr=#{addr, jdbcType=VARCHAR},</if>
+			<if test="email!=null and email!=''">email=#{email, jdbcType=VARCHAR},</if>
+			<if test="headimgurl!=null and headimgurl!=''">headimgurl=#{headimgurl, jdbcType=VARCHAR},</if>
+			<if test="verstatus!=null and verstatus!=''">verstatus=#{verstatus, jdbcType=VARCHAR},</if>
+			<if test="ctrlcode!=null and ctrlcode!=''">ctrlcode=#{ctrlcode, jdbcType=VARCHAR},</if>
+			<if test="createtime!=null and createtime!=''">createtime=#{createtime, jdbcType=VARCHAR},</if>
+			<if test="edittime!=null and edittime!=''">edittime=#{edittime, jdbcType=VARCHAR},</if>
+			<if test="zip!=null and zip!=''">zip=#{zip, jdbcType=VARCHAR},</if>
+			<if test="cardtype!=null and cardtype!=''">cardtype=#{cardtype, jdbcType=VARCHAR},</if>
+			<if test="cardid!=null and cardid!=''">cardid=#{cardid, jdbcType=VARCHAR} ,</if>
+		</trim>
+		where
+		<include refid="conditionOnlyId" />
+	</update>
+
+	<!-- 功能说明 -->
+	<delete id="deleteByIds">
+		delete from
+		<include refid="tableNameSql" />
+		where id in
+		<foreach index="index" item="item" collection="array" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<!-- 功能说明 -->
+	<delete id="deleteById" parameterType="Object">
+		delete from
+		<include refid="tableNameSql" />
+		where
+		<include refid="conditionOnlyId" />
+	</delete>
+</mapper>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.base.web.system.model.BaseRole">
+	<resultMap type="com.rainsoft.base.web.system.model.BaseRole" id="BaseRoleResultMap">
+		<result column="id" property="id" jdbcType="VARCHAR" />					<!-- 角色id -->
+		<result column="creator" property="creator" jdbcType="VARCHAR" />		<!-- 创建人id -->
+		<result column="updator" property="updator" jdbcType="VARCHAR"/>		<!-- 更新人id -->
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />	<!-- 创建时间 -->
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />	<!-- 更新时间 -->
+<!-- 		<result column="sort" property="sort" jdbcType="INTEGER"/>				排序 -->
+		<result column="remark" property="remark" jdbcType="VARCHAR"/>			<!-- 备注 -->
+		<result column="privilege" property="privilege" jdbcType="VARCHAR"/>	<!-- 权限 -->
+		<result column="status" property="status" jdbcType="INTEGER"/>			<!-- 状态 -->
+		<result column="name" property="name" jdbcType="VARCHAR"/>				<!-- 名称 -->
+		<result column="searchValue" property="searchValue" jdbcType="VARCHAR"/>				<!-- 名称 -->
+	</resultMap>
+	
+	<!-- 检查角色名称是否相同 -->
+	<select id="checkRoleExist" parameterType="com.rainsoft.base.web.system.model.BaseRole" resultType="java.lang.Integer">
+		select 1 num from dual where exists(
+			select sr.name from t_sys_role sr 
+			<where>
+				and sr.creator = #{creator} and sr.name = #{name}
+				<if test="id != null and id > 0">
+					and sr.id != #{id}
+				</if>
+			</where>
+		)
+	</select>
+	
+	<!-- 查出创建角色者的菜单及权限 -->
+	<select id="getMenuPrivilege" parameterType="com.rainsoft.base.web.system.model.BaseRole" resultType="java.util.Map">
+		select sr.id, nvl(sr.privilege, '#') resPrivilege, nvl(srr.privilege, '#') privilege from 
+		(
+			select t1.role_id id from t_sys_related_role t1 where t1.related_type = '1' and t1.related_id = #{creator}
+		) t 
+		left join t_sys_related_role srr 
+		on t.id = srr.role_id and srr.related_type = '2' 
+		left join t_sys_resource sr 
+		on sr.id = srr.related_id
+		where sr.status = 'e'
+ 	</select>
+	
+	<!-- 保存角色 -->
+	<insert id="save" parameterType="com.rainsoft.base.web.system.model.BaseRole">
+		<selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="id">
+			select seq_role_id.nextval as id from dual
+		</selectKey>
+		 insert into t_sys_role
+			(id, name, remark, creator, updator, create_time, status, privilege)
+		values
+			(#{id}, #{name}, #{remark}, #{creator}, #{creator}, sysdate, #{status}, #{privilege})
+	</insert>
+	
+	<!-- 更新角色 -->
+	<update id="update" parameterType="com.rainsoft.base.web.system.model.BaseRole">
+		update t_sys_role
+			set name = #{name},
+			remark = #{remark},
+			updator = #{updator},
+			update_time = sysdate，
+			status = #{status},
+			privilege = #{privilege}
+		where id = #{id}
+	</update>
+	
+	<!-- 检查角色是否被使用 -->
+	<select id="checkRoleUse" resultType="java.lang.Integer">
+		select 1 num from dual where exists(select role_id from t_sys_related_role where related_type = '1' and role_id in
+			<foreach collection="array" index="index" item="item" open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+		)
+	</select>
+	
+	<!-- 删除角色 -->
+	<delete id="delRole">
+		delete from t_sys_role where id in 
+			<foreach collection="array" index="index" item="item" open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+	</delete>
+	
+	<!-- 根据userId获取本账户所属角色 -->
+	<select id="getRoleByUserId" parameterType="Integer" resultType="com.rainsoft.base.web.system.model.BaseRole">
+		select id, name from t_sys_role t1, t_sys_related_role t2 
+		where t1.id = t2.role_id and t2.related_type = '1'
+		and t2.related_id = #{userId}
+	</select>
+	
+	<!-- 根据userId获取本账户创建的角色 -->
+	<select id="getRoleListByUserId" parameterType="Integer" resultType="com.rainsoft.base.web.system.model.BaseRole">
+		select id, name from t_sys_role t where t.creator = #{userId} and t.status = 'e'
+	</select>
+ 
+	<!-- 根据userId获取角色(jqGrid) -->
+	<select id="findListBy" parameterType="java.util.Map" resultMap="BaseRoleResultMap">
+		with t as( select t.*, srr.related_id || '_' || nvl(sr.privilege, '#') || '_' || nvl(srr.privilege, '#') resPrivilege from 
+			(
+				select t1.* from t_sys_role t1 where t1.creator = #{creator}
+			) t 
+			left join t_sys_related_role srr 
+			on t.id = srr.role_id and srr.related_type = '2' 
+			left join t_sys_resource sr 
+			on sr.id = srr.related_id
+			where sr.status = 'e'
+		)
+		select t.id, t.name, t.remark, t.status, t.privilege, t.creator, t.updator, t.create_time, t.update_time, decode('_#_#', listagg(t.resPrivilege,',') within GROUP (order by t.resPrivilege), null, listagg(t.resPrivilege,',') within GROUP (order by t.resPrivilege)) searchValue 
+		from t 
+		<where>
+			<include refid="common.filters" />
+		</where>
+		group by t.id, t.name, t.remark, t.status, t.privilege, t.creator, t.updator, t.create_time, t.update_time
+		<if test="SORT != null and SORT != ''">
+			order by t.${SORT} 
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	
+	<!-- 删除已分配的权限 -->
+	<delete id="deleteAuthority" parameterType="com.rainsoft.base.web.system.model.BaseRole">
+		delete from t_sys_related_role where related_type = '2' and role_id in 
+		<foreach collection="array" index="index" item="item" open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+	</delete>
+	
+	<!-- 分配权限 -->
+	<insert id="saveAuthority" parameterType="com.rainsoft.base.web.system.model.BaseRole">
+		insert into t_sys_related_role(related_id, role_id, related_type, privilege)
+		<foreach collection="list" index="index" item="item" open="(" close=")" separator="union all">
+			select #{item.id} related_id, #{id} role_id, '2' related_type, #{item.privilege} privilege from dual
+		</foreach>
+	</insert>
+	
+	<!-- 根据id获取updateTime -->
+	<select id="findById" parameterType="java.lang.String" resultMap="BaseRoleResultMap">
+		select * from t_sys_role t where t.id = #{id}
+	</select>
+	
+	<!-- 根据id获取updateTime -->
+	<select id="findListByIds" parameterType="list" resultMap="BaseRoleResultMap">
+		select * from t_sys_role t where t.id in
+		<foreach index="index" item="item" collection="array" separator="," open="(" close=")" >
+			#{item}
+		</foreach>
+	</select>
+	
+	<!-- 根据角色id查找使用中的角色 -->
+	<select id="checkOperateUserByRoleId" parameterType="com.rainsoft.base.web.system.model.BaseRole" resultType="java.lang.Integer">
+		select 1 num from dual 
+		where exists(select id from t_sys_related_role t1 left join t_sys_user t2 on t1.related_id = t2.id where t1.related_type = '1' and t2.status = 'e' and t1.role_id = #{id})
+	</select>
+</mapper>

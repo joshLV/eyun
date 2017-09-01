@@ -1,0 +1,27 @@
+.lm_c_title{height:25px;  padding-top:20px; font-weight:bold; color:#555; border-bottom:1px #c9e5f3 solid; padding-bottom:10px;}
+.lm_c_title_td{ font-size:16px;}
+
+.lm_add{ padding:0 30px;}
+.lm_add td{ padding:15px 10px; font-size:14px;}
+.lm_add span{ font-size:12px; color:red;}
+.td-wwbdis{
+	border-right:1px dotted #ccc;
+	border-bottom: 1px dotted #ccc;
+}
+.td-msgbuy{
+	border-bottom: 1px dotted #ccc;
+}
+.wwbi-btn{
+	border:0; 
+	cursor:pointer; 
+	width:72px;
+	height:40px;
+	margin-top: 10px;
+}
+.wwbi-btn-enable{
+	background:url("../../images/sms/qrtj.jpg") no-repeat;
+}
+.wwbi-btn-disable{
+	background:url("../..//images/sms/qrtjbak.jpg") no-repeat;
+	cursor: default;
+}

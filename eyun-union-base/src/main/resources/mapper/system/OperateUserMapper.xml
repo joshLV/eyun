@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.base.web.system.model.OperateUser">
+	<resultMap type="com.rainsoft.base.web.system.model.OperateUser" id="OperateUserResultMap">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="name" property="memberName" jdbcType="VARCHAR" />
+		<result column="pwd" property="memberPwd" jdbcType="VARCHAR" />
+		<result column="real_name" property="memberRealName" jdbcType="VARCHAR" />
+		<result column="parent_id" property="parentMemberId" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="role_id" property="roleID" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="creatorName" property="creatorName" jdbcType="VARCHAR" />
+		<result column="updatorName" property="updatorName" jdbcType="VARCHAR" />
+		<result column="roleName" property="roleName" jdbcType="VARCHAR" />
+		<result column="searchValue" property="searchValue" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 获取操作用户列表 -->
+	<select id="findListBy" parameterType="java.util.Map" resultMap="OperateUserResultMap" >
+		select * from (
+			select t1.id, t1.name, t1.pwd, t1.real_name, t1.status, t1.create_time, t1.update_time, t1.remark, t1.parent_id, t2.name creatorName, t3.name updatorName, t4.role_id, t5.name roleName, listagg(t6.place_code, ',') within GROUP(order by t6.place_code) searchValue 
+			from t_sys_user t1 left join t_sys_user t2 on t1.creator = t2.id left join t_sys_user t3 on t1.updator = t3.id left join t_sys_related_role t4 on t1.id = t4.related_id left join t_sys_role t5 on t4.role_id = t5.id left join t_place_user_related t6 on t6.user_id = t1.id 
+			where  t1.status != 'a' and t4.related_type = '1' group by t1.id, t1.name, t1.pwd, t1.real_name, t1.status, t1.create_time, t1.update_time, t1.remark, t1.parent_id, t2.name, t3.name, t4.role_id, t5.name
+		)
+		<where>
+			<if test="creator != null and creator != ''">
+				and parent_id = #{creator}
+			</if>
+			<include refid="common.filters" />
+		</where>
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	
+	<!-- 检查用户名称是否重复 -->
+	<select id="checkUserName" parameterType="com.rainsoft.base.web.system.model.OperateUser" resultType="java.lang.Integer">
+		select 1 num from dual where exists(
+			select id from t_sys_user t 
+			<where>
+				and (t.name = #{memberName} or t.another_name = #{memberName})
+				<if test="id != null and id > 0">
+					and id != #{id}
+				</if>
+			</where>
+		)
+	</select>
+	
+	<!-- 保存操作用户 -->
+	<insert id="save" parameterType="com.rainsoft.base.web.system.model.OperateUser">
+		<selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="id">
+			select seq_memberId.nextval as id from dual
+		</selectKey>
+		insert into t_sys_user
+		(id, name, pwd, real_name, parent_id, status, create_time, remark, updator, update_time, creator)
+		values
+		(#{id}, #{memberName}, #{memberPwd}, #{memberRealName}, #{creator}, 'e', sysdate, #{remark}, #{creator}, sysdate, #{creator})
+	</insert>
+	
+	<!-- 保存用户角色 -->
+	<insert id="saveRole" parameterType="com.rainsoft.base.web.system.model.OperateUser">
+		insert into t_sys_related_role(related_id, role_id, related_type)values(#{id}, #{roleID}, '1')
+	</insert>
+	<!-- 保存用户场所 -->
+	<insert id="savePlace" >
+		insert into t_place_user_related (id, user_id, place_code, creator, updator, create_time, update_time, status)
+		select seq_related_id.nextVal id, b.* from
+		(<foreach collection="array" index="index" item="item" open="(" close=")" separator="union all">
+			select #{userId} user_id, #{item} place_code, #{creator} creator, #{updator} updator, sysdate create_time, sysdate update_time, 'e' status from dual
+		</foreach>) b
+	</insert>
+		
+	<!-- 更新操作用户 -->
+	<update id="update" parameterType="com.rainsoft.base.web.system.model.OperateUser">
+		update t_sys_user set 
+			name = #{memberName}, 
+			<if test="memberPwd != null and memberPwd != ''">
+				pwd = #{memberPwd}, 
+			</if>
+			real_name = #{memberRealName}, 
+			updator = #{updator}, 
+			update_time = sysdate, 
+			remark = #{remark}, 
+			status = #{status} 
+		where id = #{id}
+	</update>
+	
+	<!-- 修改用户角色 -->
+	<update id="updateRole">
+		update t_sys_related_role set role_id = #{roleID} where related_type='1' and related_id = #{id}
+	</update>
+	
+	<!-- 修改用户场所前删除现有场所 -->
+	<delete id="deleteAllPlace" parameterType="com.rainsoft.base.web.system.model.OperateUser">
+		delete from t_place_user_related where user_id = #{id}
+	</delete>
+	
+	<!-- 删除操作用户 -->
+	<delete id="deleteByIds">
+		delete from t_sys_user where id in
+		<foreach collection="array" index="index" item="item" open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+	</delete>
+	
+	<!-- 批量删除用户角色关联表数据 -->
+	<delete id="deleteRoleBatch">
+		delete from t_sys_related_role where related_type='1' and related_id in
+		<foreach collection="array" index="index" item="item" open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+	</delete>
+	
+	<!-- 批量删除用户场所关联表数据 -->
+	<delete id="deletePlaceBatch">
+		delete from t_place_user_related where user_id in
+		<foreach collection="array" index="index" item="item" open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+	</delete>
+</mapper>

@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.Notice">
+
+	<resultMap type="notice" id="noticeResultMap">
+		<result property="id" column="ID" />
+		<result property="name" column="NAME" />
+		<result property="content" column="CONTENT" />
+		<result property="type" column="TYPE" />
+		<result property="status" column="STATUS" />
+		<result property="statusName" column="STATUS_NAME" />
+		<result property="sendTime" column="SEND_TIME" />
+		<result property="quartzSendTime" column="QUARTZ_SEND_TIME" />
+		<result property="isDelete" column="IS_DELETE" />
+		<result property="createBy" column="CREATE_BY" />
+		<result property="createTime" column="CREATE_TIME" />
+		<result property="updateBy" column="UPDATE_BY" />
+		<result property="updateTime" column="UPDATE_TIME" />
+		<result property="noticeLevel" column="NOTICE_LEVEL" />
+		<result property="levelName" column="LEVEL_NAME" />
+		<result property="accpeterType" column="ACCPETER_TYPE" />
+		<result property="attachPath" column="ATTACH_PATH" />
+		<result property="attachment" column="ATTACHMENT" />
+		<result property="sendTarget" column="SEND_TARGET" />
+		<collection property="units" ofType="unit">
+		    <result property="code" column="UNIT_CODE" />
+		    <result property="name" column="UNIT_NAME" />
+		</collection>
+	</resultMap>
+	
+	<select id="findListBy" resultType="notice">
+		<include refid="notices" />
+		 <if test="createBy != null and createBy != ''">
+			AND N.CREATE_BY = #{createBy}
+		</if> 
+		<if test="item == 0">
+			AND N.STATUS = 2
+		</if>
+		<if test="item == 1">
+			AND N.TYPE = 1 AND N.STATUS = 0
+		</if>
+		<if test="item == 2">
+			AND N.TYPE = 0 AND STATUS = 0
+		</if>
+		<include refid="common.filtersUnderLine" />
+		
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+		
+		
+	</select>
+	
+	<!-- 其他平台下载时使用 -->
+	<select id="getNoticeById" resultType="notice">
+		SELECT TEMP.*
+			FROM
+			  (SELECT N.ID,
+			    N.ATTACHMENT,
+			    N.ATTACH_PATH
+			  FROM T_NOTICE N
+			  WHERE N.ID      = #{id}
+			  AND N.STATUS    = '2'
+			  AND N.IS_DELETE = '0'
+			  ) TEMP
+			WHERE ROWNUM = 1
+	</select>
+	
+	<select id="getUserNoticeById" resultMap="noticeResultMap">
+		SELECT
+			N.ID,
+			N.NAME,
+			N.CONTENT,
+			N.TYPE,
+			N.STATUS,
+			CASE
+				WHEN N.STATUS = 0 THEN '草稿'
+				WHEN N.STATUS = 1 THEN '未发送'
+				WHEN N.STATUS = 2 THEN '已发送'
+				ELSE '草稿'
+			END STATUSNAME,
+			TO_CHAR(N.SEND_TIME,'yyyy-MM-dd HH24:mi:ss') SEND_TIME,
+		  	TO_CHAR(N.QUARTZ_SEND_TIME,'yyyy-MM-dd HH24:mi:ss') QUARTZ_SEND_TIME,
+			N.IS_DELETE,
+			N.ATTACHMENT,
+			N.ATTACH_PATH,
+			N.CREATE_BY,
+			N.CREATE_TIME,
+			N.UPDATE_BY,
+			N.UPDATE_TIME,
+			N.NOTICE_LEVEL,
+			CASE
+				WHEN N.NOTICE_LEVEL = 0 THEN '普通'
+				WHEN N.NOTICE_LEVEL = 1 THEN '重要'
+				WHEN N.NOTICE_LEVEL = 2 THEN '紧急'
+				ELSE '普通'
+			END LEVEL_NAME,
+			N.ACCPETER_TYPE,
+			F.APPUSER_ID UNIT_CODE,
+			U.USER_REALNAME UNIT_NAME
+		FROM
+			T_NOTICE N
+		LEFT JOIN
+			T_ACCPETERUSER_FEEDBACK F
+		ON
+			F.NOTICE_ID = N.ID
+		LEFT JOIN
+			T_PLATFORM_USER U
+		ON
+			U.LOGIN_USERNAME = F.APPUSER_ID
+		WHERE
+			N.IS_DELETE = 0
+		AND
+			N.ID = #{ id }
+	</select>
+	
+	<select id="getGroupNoticeById" resultMap="noticeResultMap">
+		SELECT
+			N.ID,
+			N.NAME,
+			N.CONTENT,
+			N.TYPE,
+			N.STATUS,
+			CASE
+				WHEN N.STATUS = 0 THEN '草稿'
+				WHEN N.STATUS = 1 THEN '未发送'
+				WHEN N.STATUS = 2 THEN '已发送'
+				ELSE '草稿'
+			END STATUS_NAME,
+			TO_CHAR(N.SEND_TIME,'yyyy-MM-dd HH24:mi:ss') SEND_TIME,
+		  	TO_CHAR(N.QUARTZ_SEND_TIME,'yyyy-MM-dd HH24:mi:ss') QUARTZ_SEND_TIME,
+			N.IS_DELETE,
+			N.ATTACHMENT,
+			N.ATTACH_PATH,
+			N.CREATE_BY,
+			N.CREATE_TIME,
+			N.UPDATE_BY,
+			N.UPDATE_TIME,
+			N.NOTICE_LEVEL,
+			CASE
+				WHEN N.NOTICE_LEVEL = 0 THEN '普通'
+				WHEN N.NOTICE_LEVEL = 1 THEN '重要'
+				WHEN N.NOTICE_LEVEL = 2 THEN '紧急'
+				ELSE '普通'
+			END LEVEL_NAME,
+			N.ACCPETER_TYPE,
+			U.UNIT_CODE UNIT_CODE,
+			G.NAME UNIT_NAME
+		FROM
+			T_NOTICE N
+		LEFT JOIN
+			T_NOTICE_UNIT U
+		ON
+			U.NOTICE_ID = N.ID
+		LEFT JOIN
+			T_GROUP G
+		ON
+			G.ID = U.UNIT_CODE
+		WHERE
+			N.IS_DELETE = 0
+		AND
+			N.ID = #{ id }
+	</select>
+
+	<select id="findById" resultMap="noticeResultMap">
+		<include refid="noticesWithGroupInfo" />
+		AND	N.ID = #{ id }
+	</select>
+	
+	<!-- 获取组下所有易达用户的易达号 -->
+<!-- 	<select id="getEdaIdsByPlaceGroup" resultType="string">				   -->
+<!-- 		SELECT EDA.EDA_ID -->
+<!-- 			FROM -->
+<!-- 			  ( SELECT DISTINCT T.EDA_ID -->
+<!-- 	        FROM T_APPUSER_SERVICECODE T, -->
+<!-- 	        V_EDAINFOBINDPLACE v  -->
+<!-- 	        WHERE  -->
+<!-- 	        T.SERVICE_CODE = v.PLACE_CODE -->
+<!-- 	        and v.place_id IN  -->
+<!-- 	          (SELECT t.MEMBER_ID -->
+<!-- 	            FROM T_MEMBER_CORRELATION_GROUP T  -->
+<!-- 	            WHERE T.GROUP_ID  = #{groupId}  -->
+<!-- 	            and T.MEMBER_TYPE = '1' -->
+<!-- 	          ) -->
+<!-- 	        )T, T_EDA_APP_MEMBERS EDA -->
+<!-- 		WHERE T.EDA_ID = EDA.EDA_ID -->
+<!-- 	</select> -->
+	<select id="getEdaIdsByPlaceGroup" resultType="string">
+		<foreach collection="list" item="item" index="index" separator="union">
+			SELECT EDA.EDA_ID
+				FROM
+				( SELECT DISTINCT T.EDA_ID
+					FROM T_APPUSER_SERVICECODE T,
+					V_EDAINFOBINDPLACE v 
+					WHERE 
+					T.SERVICE_CODE = v.PLACE_CODE
+					and v.place_id IN 
+					(SELECT t.MEMBER_ID
+						FROM T_MEMBER_CORRELATION_GROUP T 
+						WHERE T.GROUP_ID  = #{item.code}
+						and T.MEMBER_TYPE = '1'
+					) 
+					<!-- update by yty 2016/08/30 reason: 查询增加易达账号类型判断 begin-->
+					<if test="sendTarget != null and sendTarget > 0">
+						AND v.REGISTER_TYPE = #{sendTarget}
+					</if>
+					<!-- update by yty 2016/08/30 reason: 查询增加易达账号类型判断 end -->
+				)T, T_EDA_APP_MEMBERS EDA
+			WHERE T.EDA_ID = EDA.EDA_ID
+		</foreach>
+	</select>
+	
+	<!-- 获取组下所有易达用户的易达号 -->
+<!-- 	<select id="getEdaIdsByUserGroup" resultType="string">			 -->
+<!-- 			SELECT eda.eda_id  -->
+<!-- 				FROM T_EDA_APP_MEMBERS eda -->
+<!-- 				JOIN T_MEMBER_CORRELATION_GROUP MG -->
+<!-- 				ON mg.MEMBER_ID = EDA.ID -->
+<!-- 				WHERE MG.MEMBER_TYPE = 0 -->
+<!-- 				AND MG.GROUP_ID      = #{ id } -->
+<!-- 	</select> -->
+	<select id="getEdaIdsByUserGroup" resultType="string">
+		<foreach collection="list" item="item" index="index" separator="union">
+			SELECT eda.eda_id 
+				FROM T_EDA_APP_MEMBERS eda
+				JOIN T_MEMBER_CORRELATION_GROUP MG
+				ON mg.MEMBER_ID = EDA.ID
+				WHERE MG.MEMBER_TYPE = 0
+				AND MG.GROUP_ID = #{item.code}
+				<!-- update by yty 2016/08/30 reason: 查询增加易达账号类型判断 begin-->
+				<if test="sendTarget != null and sendTarget > 0">
+					AND eda.REGISTER_TYPE = #{sendTarget}
+				</if>
+				<!-- update by yty 2016/08/30 reason: 查询增加易达账号类型判断 end -->
+		</foreach>
+	</select>
+	
+	<select id="getNoticeTask" resultType="string">
+		SELECT
+			ID
+		FROM
+			T_NOTICE
+		WHERE
+			TYPE = 1
+		AND
+			TO_CHAR(QUARTZ_SEND_TIME, 'YYYY-MM-DD HH24:MI') = #{ quartzSendTime }
+	</select>
+	
+	<select id="getNoticeUnitById" resultType = "com.rainsoft.riplat.web.notice.model.Unit">
+		SELECT UNIT_CODE code FROM T_NOTICE_UNIT WHERE NOTICE_ID = #{ id } ORDER BY UNIT_CODE
+	</select>
+	
+	<delete id="deleteNoticeUnitById">
+		DELETE FROM T_NOTICE_UNIT WHERE NOTICE_ID = #{ id }
+	</delete>
+	
+	<delete id="deleteAccpeteruserFeedbackById">
+		DELETE FROM T_ACCPETERUSER_FEEDBACK WHERE NOTICE_ID = #{ id }
+	</delete>
+	
+	<update id="sendNotice">
+		UPDATE T_NOTICE SET STATUS = 2 , SEND_TIME = SYSDATE WHERE ID = #{parameter}
+	</update>
+	
+	<update id="deleteById">
+		<!-- UPDATE T_NOTICE SET IS_DELETE = 1 WHERE ID = #{id} --><!-- 屏蔽逻辑删除 -->
+		DELETE FROM T_NOTICE T WHERE T.ID = #{id}
+	</update>
+	
+	<insert id="save">
+		<selectKey resultType="_int" order="BEFORE" keyColumn="id" keyProperty="id">     
+	        SELECT SEQ_NOTICE.NEXTVAL AS VALUE FROM DUAL
+	    </selectKey> 
+		INSERT INTO
+			T_NOTICE(ID, NAME, CONTENT, TYPE, STATUS, SEND_TIME, QUARTZ_SEND_TIME, ATTACHMENT, ATTACH_PATH, NOTICE_LEVEL, ACCPETER_TYPE, CREATE_BY, SEND_TARGET)
+			VALUES(#{id}, #{name}, #{content}, #{type}, #{status}, TO_DATE(#{sendTime}, 'YYYY-MM-DD HH24:MI:SS'), TO_DATE(#{quartzSendTime}, 'YYYY-MM-DD HH24:MI:SS'), #{attachment}, #{attachPath }, #{noticeLevel}, #{accpeterType}, #{createBy}, #{sendTarget})
+	</insert>
+	
+	<insert id="saveNoticeUnit">
+		<selectKey resultType="_int" order="BEFORE" keyColumn="id" keyProperty="id">     
+	        SELECT SEQ_NOTICE_UNIT.NEXTVAL AS VALUE FROM DUAL     
+	    </selectKey> 
+		INSERT INTO
+			T_NOTICE_UNIT(ID, NOTICE_ID, UNIT_CODE, CREATE_BY)
+			VALUES(#{id}, #{noticeId}, #{unitCode}, #{createBy})
+	</insert>
+	
+	<insert id="saveAccpeteruserFeedback">
+		<selectKey resultType="_int" order="BEFORE" keyColumn="id" keyProperty="id">     
+	        SELECT SEQ_ACCPETERUSER_FEEDBACK.NEXTVAL AS VALUE FROM DUAL     
+	    </selectKey> 
+		INSERT INTO
+			T_ACCPETERUSER_FEEDBACK(ID, NOTICE_ID,  APPUSER_ID)
+			VALUES(#{id}, #{noticeId}, #{appuserId})
+	</insert>
+	
+	<update id="update">
+		UPDATE T_NOTICE SET
+			NAME = #{name},
+			CONTENT = #{content},
+			TYPE = #{type},
+			STATUS = #{status},
+			SEND_TIME = TO_DATE(#{sendTime}, 'YYYY-MM-DD HH24:MI:SS'),
+			QUARTZ_SEND_TIME = TO_DATE(#{quartzSendTime}, 'YYYY-MM-DD HH24:MI:SS'),
+			ATTACHMENT = #{attachment},
+			ATTACH_PATH = #{attachPath},
+			NOTICE_LEVEL = #{noticeLevel},
+			ACCPETER_TYPE = #{accpeterType},
+			UPDATE_BY = #{updateBy},
+			SEND_TARGET = #{sendTarget}
+		WHERE
+			ID = #{id}
+	</update>
+	
+	<sql id="noticesWithGroupInfo">
+		SELECT N.ID,
+		  N.NAME,
+		  N.CONTENT,
+		  N.TYPE,
+		  N.STATUS,
+		  CASE
+		    WHEN N.STATUS = 0
+		    THEN '草稿'
+		    WHEN N.STATUS = 1
+		    THEN '未发送'
+		    WHEN N.STATUS = 2
+		    THEN '已发送'
+		    ELSE '草稿'
+		  END STATUS_NAME,
+		  TO_CHAR(N.SEND_TIME,'yyyy-MM-dd HH24:mi:ss') SEND_TIME,
+		  TO_CHAR(N.QUARTZ_SEND_TIME,'yyyy-MM-dd HH24:mi:ss') QUARTZ_SEND_TIME,
+		  N.IS_DELETE,
+		  N.ATTACHMENT,
+		  N.ATTACH_PATH,
+		  N.CREATE_BY,
+		  N.CREATE_TIME,
+		  N.UPDATE_BY,
+		  N.UPDATE_TIME,
+		  N.NOTICE_LEVEL,
+		  CASE
+		    WHEN N.NOTICE_LEVEL = 0
+		    THEN '普通'
+		    WHEN N.NOTICE_LEVEL = 1
+		    THEN '重要'
+		    WHEN N.NOTICE_LEVEL = 2
+		    THEN '紧急'
+		    ELSE '普通'
+		  END LEVEL_NAME,
+		  N.ACCPETER_TYPE,
+		  t.UNIT_CODE,
+		  G.NAME UNIT_NAME,
+		  N.SEND_TARGET
+		FROM T_NOTICE N
+		LEFT JOIN T_NOTICE_UNIT T
+		ON N.ID = T.NOTICE_ID
+		LEFT JOIN T_GROUP G
+		ON T.UNIT_CODE    = G.ID
+		WHERE N.IS_DELETE = 0
+	</sql>
+	
+	<sql id="notices">
+		SELECT
+			N.ID,
+			N.NAME,
+			N.CONTENT,
+			N.TYPE,
+			N.STATUS,
+			CASE
+				WHEN N.STATUS = 0 THEN '草稿'
+				WHEN N.STATUS = 1 THEN '未发送'
+				WHEN N.STATUS = 2 THEN '已发送'
+				ELSE '草稿'
+			END statusName,
+			TO_CHAR(N.SEND_TIME,'yyyy-MM-dd HH24:mi:ss') sendTime,
+		  	TO_CHAR(N.QUARTZ_SEND_TIME,'yyyy-MM-dd HH24:mi:ss') QUARTZ_SEND_TIME,
+			N.IS_DELETE,
+			N.ATTACHMENT,
+			N.ATTACH_PATH,
+			N.CREATE_BY,
+			N.CREATE_TIME,
+			N.UPDATE_BY,
+			N.UPDATE_TIME,
+			N.NOTICE_LEVEL,
+			CASE
+				WHEN N.NOTICE_LEVEL = 0 THEN '普通'
+				WHEN N.NOTICE_LEVEL = 1 THEN '重要'
+				WHEN N.NOTICE_LEVEL = 2 THEN '紧急'
+				ELSE '普通'
+			END levelName,
+			N.ACCPETER_TYPE,
+			N.SEND_TARGET
+		FROM
+			T_NOTICE N
+		WHERE
+			N.IS_DELETE = 0
+	</sql>
+	
+	<!-- 获取单个通知信息详情 -->
+	<select id="getNoticeDetailInfo"  resultMap="noticeResultMap">
+		<include refid="notices" />				
+			AND N.id = #{noticeId}
+	</select>
+	
+	<resultMap type="notice4App" id="noticeResultMapForApp">
+		<result property="id" column="ID" />
+		<result property="name" column="NAME" />
+		<result property="sendTime" column="SEND_TIME" />
+		<result property="issueName" column="USER_REALNAME" />
+		<result property="readStatus" column="STATUS" />
+		<result property="content" column="content" /> <!-- 通知内容 -->
+		<result property="attachName" column="ATTACHMENT" /><!-- 附件名 -->
+		<result property="attachPath" column="ATTACH_PATH" /><!-- 附件路径 -->		
+		<result property="noticeLevel" column="NOTICE_LEVEL" />
+	</resultMap>
+	
+	<!-- App端获取信息列表 -->
+	<select id="getNoticeList" resultMap="noticeResultMapForApp">
+		SELECT 
+	      N.ID,
+	      N.NAME,
+	      TO_CHAR(N.SEND_TIME,'YYYY-MM-DD HH24:MI:SS') SEND_TIME,
+	      TPU.USER_REALNAME,
+	      TAF.STATUS,
+	      N.NOTICE_LEVEL
+	      FROM T_NOTICE N, T_ACCPETERUSER_FEEDBACK TAF,T_PLATFORM_USER TPU
+	     WHERE N.ID = TAF.NOTICE_ID
+	       AND N.CREATE_BY = TPU.ID
+	       AND TAF.APPUSER_ID = #{userId}
+	       AND N.STATUS = '2'
+	       AND N.IS_DELETE = '0'
+	       <if test="isDelete != null and isDelete != -1">
+		   		AND TAF.IS_DELETE = #{isDelete}
+		   </if>
+	       <if test="noticeLevel != null and noticeLevel != -1">
+	       		AND N.NOTICE_LEVEL = #{noticeLevel}
+	       </if>
+	     ORDER BY N.SEND_TIME DESC, N.NAME
+	</select>
+	
+	<!-- 未读通告数量 -->
+	<select id="getUnReadCount" resultType="Integer">
+		SELECT COUNT(N.ID)
+		  FROM T_NOTICE N, T_ACCPETERUSER_FEEDBACK TAF, T_PLATFORM_USER TPU
+		 WHERE N.ID = TAF.NOTICE_ID
+		   AND N.CREATE_BY = TPU.ID
+		   AND TAF.APPUSER_ID = #{userId}
+		   AND N.STATUS = '2'
+		   AND TAF.STATUS = '0'
+		   AND N.IS_DELETE = '0'
+		   <if test="isDelete != null and isDelete != -1">
+		   		AND TAF.IS_DELETE = #{isDelete}
+		   </if>
+	       <if test="noticeLevel != null and noticeLevel != -1">
+	       		AND N.NOTICE_LEVEL = #{noticeLevel}
+	       </if>
+	</select>
+	
+	<!-- App端翻页时查询rownum -->
+	<select id="getNoticeIdRowNum" resultType="Integer">
+		SELECT NVL(SUM(RN), 0)
+		  FROM (SELECT T.*, ROWNUM RN
+		          FROM (SELECT N.ID
+				  FROM T_NOTICE N, T_ACCPETERUSER_FEEDBACK TAF,T_PLATFORM_USER TPU
+				 WHERE N.ID = TAF.NOTICE_ID
+				   AND N.CREATE_BY = TPU.ID
+				   AND TAF.APPUSER_ID = #{userId}
+				   AND N.STATUS = '2'
+				   AND N.IS_DELETE = '0'
+			      <if test="isDelete != null and isDelete != -1">
+				   		AND TAF.IS_DELETE = #{isDelete}
+				   </if>
+			       <if test="noticeLevel != null and noticeLevel != -1">
+			       		AND N.NOTICE_LEVEL = #{noticeLevel}
+			       </if>
+				 ORDER BY N.SEND_TIME DESC, N.NAME) T) TEMP
+		 WHERE TEMP.ID = #{noticeId}
+	</select>
+	
+	<!-- App端阅读通知通告 -->	
+	<update id="updateAccpterStatus">
+		UPDATE T_ACCPETERUSER_FEEDBACK TAF 
+				SET TAF.STATUS = #{status}
+				
+				<if test="status == 1">
+					,READ_TIME = SYSDATE
+				</if>
+				
+			WHERE TAF.NOTICE_ID = #{noticeId}
+				AND TAF.APPUSER_ID = #{appuserId}
+	</update>
+	
+	<!-- App端回复通知通告 -->
+	<insert id="replayNotice">
+		INSERT INTO T_REPLY_HISTORY (ID,REPLY_TIME,REPLY_CONTENT,REPLY_USER_ID,REPLY_USER_TYPE,NOTICE_ID) VALUES (SEQ_REPLY_HISTORY.NEXTVAL,#{replyTime},#{replyContent},#{userId},#{userType},#{noticeId})
+	</insert>
+	
+	<!-- App端获取单条通知 -->
+	<select id="getEdaNoticeById" resultMap="noticeResultMapForApp">
+		SELECT TEMP.*
+		  FROM (SELECT N.ID,
+		               N.NAME,
+		               TO_CHAR(N.SEND_TIME, 'YYYY-MM-DD HH24:MI:SS') SEND_TIME,
+		               TPU.USER_REALNAME,
+		               N.CONTENT,
+		               N.ATTACHMENT,
+		               N.ATTACH_PATH
+		          FROM T_NOTICE                N,
+		               <!-- T_ACCPETERUSER_FEEDBACK TAF, -->
+		               T_PLATFORM_USER         TPU
+		         WHERE 1=1
+		           <!-- AND N.ID = TAF.NOTICE_ID -->
+		           AND N.CREATE_BY = TPU.ID
+		           AND N.ID = #{recordId}
+		           AND N.IS_DELETE = '0') TEMP
+		 WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 查询当前用户下的管辖区域内的所有所有场所用户 -->
+	<select id="getAllEdaIdsByUserId" resultType = "string">
+		SELECT DISTINCT V.EDA_ID
+			FROM V_EDAINFOBINDPLACE V
+			JOIN
+			  (SELECT PA.AREAID
+			  FROM PUBAREA PA
+			  WHERE PA.IFLEAF          = 'Y'
+			    CONNECT BY PA.PARENTID = PRIOR PA.AREAID
+			    START WITH PA.AREAID  IN
+			    (SELECT TPUA.AREA_ID FROM T_PLATFORM_USER_AREA TPUA WHERE TPUA.USER_ID = #{userId}
+			    )
+			  ) TEMP
+			ON TEMP.AREAID = V.AREA_ID
+			<!-- update by yty 2016/08/30 reason: 查询增加易达账号类型判断 begin-->
+			<where>
+				<if test="sendTarget != null and sendTarget > 0">
+					AND V.REGISTER_TYPE = #{sendTarget}
+				</if>
+			</where>
+			<!-- update by yty 2016/08/30 reason: 查询增加易达账号类型判断 end -->
+	</select>
+	
+	<!-- 查询该用户下存在的区域Id -->
+	<select id="getAreaIdByUserId" resultType="com.rainsoft.riplat.web.notice.model.PubArea">
+	  SELECT PA.AREAID,
+		    PA.NODEPATH,
+		    PA.TREELEVEL,
+		    PA.AREANAME
+		  FROM T_PLATFORM_USER_AREA TPUA
+		  JOIN PUBAREA PA
+		  ON TPUA.AREA_ID    = PA.AREAID
+		  <where>
+		  	<if test="userId != null and userId != ''">
+			  WHERE TPUA.USER_ID = #{userId}
+		  	</if>
+		  </where>
+	</select>
+	
+	<!-- 查询某个区域下的所有三级子区域 -->
+	<select id="getSubAreaIdsByParAreaId" resultType = "string">
+		SELECT PA.AREAID
+			FROM PUBAREA PA
+		  CONNECT BY PRIOR PA.AREAID=PA.PARENTID
+		  START WITH PA.PARENTID = #{areaId}
+		<!-- SELECT PA.AREAID FROM PUBAREA PA WHERE PA.NODEPATH LIKE '%'+${areaId}+'%' -->
+	</select>
+	
+	<!-- 查询某个用户下的所有三级子区域 -->
+	<select id="getSubAreaIdsByUserId" resultType = "string">
+		SELECT PA.AREAID
+			FROM PUBAREA PA
+			WHERE PA.IFLEAF          = 'Y'
+			  CONNECT BY PA.PARENTID = PRIOR PA.AREAID
+			  START WITH PA.AREAID  IN
+			  (
+			  	SELECT TPUA.AREA_ID FROM T_PLATFORM_USER_AREA TPUA WHERE TPUA.USER_ID = #{userId}
+			  )
+	</select>
+	
+	<!-- 查询当前区域下的所有易达号 -->
+	<select id="getEdaIdsByAreaId" resultType = "string">
+		<foreach collection="list" item="item" index="index" separator="union">
+			SELECT V.EDA_ID FROM V_EDAINFOBINDPLACE V WHERE V.AREA_ID like '%' || #{item.code} || '%' 
+			<!-- update by yty 2016/08/31 reason: 查询增加易达账号类型判断 begin-->
+			<if test="sendTarget != null and sendTarget > 0">
+				AND V.REGISTER_TYPE = #{sendTarget}
+			</if>
+			<!-- update by yty 2016/08/31 reason: 查询增加易达账号类型判断 end-->
+		</foreach>
+	</select>
+	
+	<!-- app删除通知 	type	0：物理删除（彻底删除）1:逻辑删除（垃圾箱）2：还原 -->
+	<delete id="delOrRedNoticeByApp">
+		<choose>
+			<when test="type != null and type == 0">
+				DELETE FROM T_ACCPETERUSER_FEEDBACK TAF
+			</when>
+			<when test="type != null and type == 1">
+				UPDATE T_ACCPETERUSER_FEEDBACK TAF 
+					SET TAF.IS_DELETE = 1
+			</when>
+			<otherwise>
+				UPDATE T_ACCPETERUSER_FEEDBACK TAF 
+					SET TAF.IS_DELETE = 0
+			</otherwise>
+		</choose>
+		<where>
+			AND TAF.NOTICE_ID IN
+			<foreach collection="array" item="item" index="index" open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+			AND TAF.APPUSER_ID = #{edaId}
+		</where>
+	</delete>
+</mapper>

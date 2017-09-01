@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.2.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd">
+
+	<!-- 扫描controller（controller层注入） -->
+	<context:component-scan base-package="com.rainsoft">
+		<!-- 允许定义过滤器将基包下的某些类纳入或排除 -->
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+
+		<!-- 排除 -->
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service" />
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository" />
+	</context:component-scan>
+
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="UTF-8" />
+		<!-- 指定所上传文件的总大小不能超过2000KB。注意maxUploadSize属性的限制不是针对单个文件，而是所有文件的容量之和 -->
+		<property name="maxUploadSize" value="2048000" />
+		<!-- 设置在文件上传时允许写到内存中的最大值，以字节为单位计算，默认是10240 -->
+		<!-- 但是经实验，上传文件大小若小于此参数，则不会生成临时文件，很尴尬，故改为2048 -->
+		<property name="maxInMemorySize" value="2048" />
+		
+		<property name="uploadTempDir" value="/upload/" />
+	</bean>
+
+	<!-- 国际化 -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	    <property name="basename" value="i18n/message" />
+	    <!-- 默认为false，这样当Spring在ResourceBundle中找不到messageKey的话，就抛出NoSuchMessageException，把它设置为True，则找不到不会抛出异常，而是使用messageKey作为返回值 -->
+	    <property name="useCodeAsDefaultMessage" value="true" />
+	</bean>
+	
+	<mvc:interceptors>  
+	    <!-- 国际化操作拦截器 如果采用基于（请求/Session/Cookie）则必需配置 --> 
+	    <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" />  
+	</mvc:interceptors>  
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver" />
+	
+	<!-- 启用默认配置 -->
+	<mvc:annotation-driven>
+		<mvc:message-converters register-defaults="true">
+			<!-- 配置Fastjson支持 -->
+			<bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/html;charset=UTF-8</value>
+						<value>application/json</value>
+					</list>
+				</property>
+
+				<!-- 关于features属性,不是serializerFeature,而是features,详见FastJsonHttpMessageConverter.java 它是用来控制json序列化输出时的一些额外属性,比如说该字段是否输出、输出时key使用单引号还是双引号、key不使用任何引号等等 QuoteFieldNames:输出key时是否使用双引号,默认为true WriteMapNullValue:是否输出值为null的字段,默认为false WriteNullNumberAsZero:数值字段如果为null,输出为0,而非null WriteNullListAsEmpty:List字段如果为null,输出为[],而非null 
+					WriteNullStringAsEmpty:字符类型字段如果为null,输出为"",而非null WriteNullBooleanAsFalse:Boolean字段如果为null,输出为false,而非null -->
+
+				<property name="features">
+					<list>
+						<value>WriteMapNullValue</value>
+						<value>QuoteFieldNames</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+
+	<!-- 拦截器 -->
+	<mvc:interceptors>
+		<!-- 多个拦截器,顺序执行 -->
+		<mvc:interceptor>
+			<mvc:mapping path="/**" /><!-- 如果不配置或/*,将拦截所有的Controller -->
+			<!-- <mvc:exclude-mapping path="/login/*" /> -->
+			<bean class="com.rainsoft.base.common.interceptor.WebCommonInterceptor"></bean>
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" /><!--如果不配置或/*,将拦截所有的Controller -->
+			<mvc:exclude-mapping path="/*login*.*" />
+			<mvc:exclude-mapping path="/NoticeService/*" />
+			<mvc:exclude-mapping path="/SyncDataService/*" />
+			<mvc:exclude-mapping path="/notice4Web/*" /><!--目前发现项目里面没有-->
+			<mvc:exclude-mapping path="/Isec_*/*"/>
+			<mvc:exclude-mapping path="/Mgr_param/*"/>
+			<mvc:exclude-mapping path="/Msg_push/*"/>
+            <mvc:exclude-mapping path="/getIsecData*" />
+			<bean class="com.rainsoft.base.common.interceptor.CommonInterceptor"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+	<mvc:default-servlet-handler />
+	<!-- 启动@AspectJ支持 -->
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+
+	<!-- jsp页面解析器，当Controller返回XXX字符串时，先通过拦截器，然后该类就会在/WEB-INF/目录下，查找XXX.jsp文件 -->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+		<property name="order" value="0" />
+	</bean>
+<!-- 	<mvc:resources mapping="/common/**" location="/common/" /> -->
+	<!-- 拦截器配置 -->
+	<!-- <mvc:interceptors> -->
+	<!-- session超时 -->
+	<!-- <mvc:interceptor> -->
+	<!-- <mvc:mapping path="/report/*"/> -->
+	<!-- <bean class="com.rainsoft.services.common.interceptor.SessionTimeoutInterceptor"> -->
+	<!-- <property name="allowUrls"> -->
+	<!-- <list> -->
+	<!-- 如果请求中包含以下路径，则不进行拦截 -->
+	<!-- <value>/index</value> -->
+	<!-- <value>/login</value> -->
+	<!-- <value>/js</value> -->
+	<!-- <value>/css</value> -->
+	<!-- <value>/image</value> -->
+	<!-- <value>/images</value> -->
+	<!-- </list> -->
+	<!-- </property> -->
+	<!-- </bean> -->
+	<!-- </mvc:interceptor> -->
+	<!-- </mvc:interceptors> -->
+</beans>

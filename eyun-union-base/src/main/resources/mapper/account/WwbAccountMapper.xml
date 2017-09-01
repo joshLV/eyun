@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.account.dao.IWwbAccountDao">
+	
+	<!-- 更新账户总使用金额 -->
+	<update id="updateAccAccount" parameterType="com.rainsoft.union.web.account.model.WwbAccount">
+		update bllaccountinfo b set b.totalUseWwbiFee = #{wwbAccount.totalUseWwb}<!--账户总支出数  --> where b.memberId = #{wwbAccount.userId}
+	</update>
+	
+	<!--begin 旺旺币总充值金额加此次充值金额，余额加此次充值金额  旺旺币账户不存在则插入，否则更新 -->
+	<!-- 旺旺币总充值金额加此次充值金额，余额加此次充值金额 -->
+	<update id="updateWwbAccount" parameterType="com.rainsoft.union.web.account.model.WwbAccount" >
+        update wwbaccountinfo set 
+        totalBuyWwb = #{wwbAccount.totalBuyWwb},<!--旺旺币总充值数额  --> 
+        balance = #{wwbAccount.balance}  
+        where placeDeviceId = #{wwbAccount.placeDeviceId}
+	</update>
+	
+	<!-- 旺旺币总充值金额加此次充值金额，余额加此次充值金额  旺旺币账户不存在则插入-->
+	<insert id="insertWwbAccount" parameterType="com.rainsoft.union.web.account.model.WwbAccount" >
+        insert into wwbaccountinfo (
+        	memberid, totalbuywwb, status, placeDeviceId, opttime, balance) 
+        values(
+        	#{wwbAccount.userId}, 
+        	#{wwbAccount.totalBuyWwb}, 'Y', 
+        	#{wwbAccount.placeDeviceId}, sysdate, 
+        	#{wwbAccount.balance})
+	</insert>
+	<!--end 旺旺币总充值金额加此次充值金额，余额加此次充值金额  旺旺币账户不存在则插入，否则更新 -->
+	
+	
+	<!--插入账户消费记录  -->
+	<insert id="insertBllUseWWBiRecords" parameterType="com.rainsoft.union.web.account.model.WwbAccount">
+		insert into bllUseWWBiRecords 
+                (useWWBiRecordID,memberID,placeID,useType,useWWBiMoney,optTime,status)
+        values 
+        		(seq_useWWBiRecordID.Nextval, #{wwbAccount.userId},#{wwbAccount.id},#{wwbAccount.useType},
+                   #{wwbAccount.totalGiveWwb}<!--使用人民币数  -->,sysdate,'Y')
+	</insert>
+	
+	<!--插入旺旺币充值记录  -->
+	<insert id="insertRechargewwbrecord" parameterType="com.rainsoft.union.web.account.model.WwbAccount">
+		insert into rechargewwbrecord 
+			(id, memberId, placeDeviceId, wwbfee, status, optor, opttime, rmbfee)
+        values
+        	(seq_rechargeWwbRecordId.Nextval, 
+        	#{wwbAccount.userId}, 
+        	#{wwbAccount.placeDeviceId}, 
+        	#{wwbAccount.totalUseGiveWwb}<!--本充值旺旺币数  -->, 
+        	 '8',<!--8代表重置成功 原来为Y-->
+        	#{wwbAccount.userId}, sysdate,
+        	#{wwbAccount.totalGiveWwb})
+	</insert>
+	
+	<select id="getWwbAccoutInfo" parameterType="com.rainsoft.union.web.account.model.WwbAccount" resultType="com.rainsoft.union.web.account.model.WwbAccount">
+		select t.memberid as userId, t.totalBuyWwb ,t.totalUseWwb, t.balance from wwbAccountInfo t where 
+		t.status = 'Y'
+		<!--and t.memberid = #{wwbAccount.userId}-->
+		<if test="wwbAccount.placeDeviceId != null and wwbAccount.placeDeviceId != ''">
+			and t.placeDeviceId = #{wwbAccount.placeDeviceId} 
+		</if>
+	</select>
+	
+	<resultMap id="WwbAcc" type="com.rainsoft.union.web.account.model.WwbAccount" >
+		<result column="totalGiveWwb" property="totalGiveWwb" />
+		<result column="preUseWWB" property="totalUseGiveWwb" />
+		<result column="totalBuyWwb" property="totalBuyWwb" />
+		<result column="totalUseWWB" property="totalUseWwb" />
+		<result column="balance" property="balance" />
+	</resultMap>
+	
+	<!-- 获取旺旺币账户信息 -->
+	<select id="getWwbAccount" parameterType="com.rainsoft.union.web.account.model.WwbAccount" resultType="com.rainsoft.union.web.account.model.WwbAccount">
+		select t1.totalWWB totalGiveWwb, t2.ordermoneycount preUseWWB, t4.ordermoneycount afterUseWWB, t5.balance nowBalance, (t1.totalWWB - t2.ordermoneycount) totalBuyWwb<!-- 该时间段开始旺旺币总数 -->, t3.ordermoneycount totalUseWwb<!-- 该时间段消费的总旺旺币数目 -->, (t4.ordermoneycount + t5.balance - t6.afterTotalWWB) balance<!-- 截止该时间段末尾旺旺币余额 --> from
+			<!-- 查询截止该时间段充值的所有旺旺币数目 -->
+			(select nvl(sum(WWBFee), 0) totalWWB from
+				(select t.wwbfee WWBFee, t.optTime
+					from rechargeWwbRecord t where t.placeDeviceId = #{wwbAccount.placeDeviceId} 
+					union all 
+					select w.ordermoneycount WWBFee, w.orderStartTime opttime 
+					from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum 
+					where pd.id = #{wwbAccount.placeDeviceId} and w.orderType = '2' group by w.ordermoneycount, w.ordernum, w.orderStartTime
+				)
+				<where>
+					<choose>
+						<when test="wwbAccount.endTime != null and wwbAccount.endTime != ''">
+							and optTime &lt;= to_date(#{wwbAccount.endTime}, 'yyyy/mm/dd hh24:mi:ss')
+						</when>
+						<otherwise>
+							and optTime &lt;= sysdate
+						</otherwise>
+					</choose>
+				</where> 
+			)t1, 
+			<!-- 查询截止该时间段之前所有消费的旺旺币 -->
+			(<choose>
+				<when test="wwbAccount.startTime != null and wwbAccount.startTime != ''">
+					select nvl(sum(ordermoneycount), 0) ordermoneycount from
+						(select w.ordermoneycount ordermoneycount 
+						from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum
+						where pd.id = #{wwbAccount.placeDeviceId} and w.orderType = '1' 
+						and orderStartTime &lt; to_date(#{wwbAccount.startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+						group by w.ordernum, w.ordermoneycount)
+				</when>
+				<otherwise>
+					select 0 ordermoneycount from dual
+				</otherwise>
+			</choose>
+			)t2, 
+			<!-- 查询该时间段消费的旺旺币数目 -->
+			(select nvl(sum(ordermoneycount), 0) ordermoneycount from 
+				(select w.ordermoneycount ordermoneycount
+				from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum
+				where pd.id = #{wwbAccount.placeDeviceId} and w.orderType = '1' 
+				<if test="wwbAccount.startTime != null and wwbAccount.startTime != ''">
+					and orderStartTime &gt;= to_date(#{wwbAccount.startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+				</if>
+				<if test="wwbAccount.endTime != null and wwbAccount.endTime != ''">
+					and orderStartTime &lt;= to_date(#{wwbAccount.endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+				</if>
+				group by w.ordernum, w.ordermoneycount)
+			) t3, 
+			<!-- 查询该时间段之后消费的旺旺币数目 -->
+			(<choose>
+				<when test="wwbAccount.endTime != null and wwbAccount.endTime != ''">
+					select nvl(sum(ordermoneycount), 0) ordermoneycount from 
+						(select w.ordermoneycount ordermoneycount
+						from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum
+						where pd.id = #{wwbAccount.placeDeviceId} and w.orderType = '1' 
+						and orderStartTime &gt; to_date(#{wwbAccount.endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+						group by w.ordernum, w.ordermoneycount)
+				</when>
+				<otherwise>
+					select 0 ordermoneycount from dual
+				</otherwise>
+			</choose>
+			) t4,
+			<!-- 查询当前旺旺币数目 -->
+			(select nvl(t.balance, 0) balance from wwbAccountInfo t where t.placeDeviceId = #{wwbAccount.placeDeviceId})t5,
+			<!-- 该时间段之后充值的旺旺币数目 -->
+			(select nvl(sum(afterWWBFee), 0) afterTotalWWB from
+				(select t.wwbfee afterWWBFee, t.optTime
+					from rechargeWwbRecord t where t.placeDeviceId = #{wwbAccount.placeDeviceId} 
+					union all 
+					select w.ordermoneycount WWBFee, w.orderStartTime opttime 
+					from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum 
+					where pd.id = #{wwbAccount.placeDeviceId} and w.orderType = '2' group by w.ordermoneycount, w.ordernum, w.orderStartTime
+				)
+				<where>
+					<choose>
+						<when test="wwbAccount.endTime != null and wwbAccount.endTime != ''">
+							and optTime &gt; to_date(#{wwbAccount.endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+						</when>
+						<otherwise>
+							and optTime &gt; sysdate
+						</otherwise>
+					</choose>
+				</where> 
+			)t6
+	</select>
+	<!-- @author qianna 根据账号获取旺旺币余额，只是当前账号下面的 -->
+	<select id="getBalanceByUserId" parameterType="int" resultType="double">
+		select a.balance from wwbaccountinfo a
+		where  a.status='Y'
+		      and a.placedeviceid in
+				(  select distinct b.id from BASPLACEDEVICE b
+					inner join Basdevice c on b.serialnum = c.serialnum
+					inner join basPlace d on b.placecode = d.placecode
+					where d.memberid =  #{memberId }
+						and c.productid in (select productId from view_productid_bill ))
+		      and rowNum=1
+	</select>
+</mapper>

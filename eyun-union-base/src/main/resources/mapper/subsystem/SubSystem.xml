@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.subsystem.dao.SubSystemDao">
+    <!--用户是否在旺旺吧注册-->
+    <select id="isRegister" resultType="Integer">
+        select nvl(max(id),0) from sys_user@bmanageCoobar where user_name = #{userName}
+    </select>
+
+    <!--插入账号信息-->
+    <insert id="accountInfo" parameterType="com.rainsoft.union.web.subsystem.model.Coobar">
+        insert into tAccountInfo@bmanageCoobar
+        (id,userName,password,area,email,proEmail,mobilePhone,createTime,updateTime,regTime,linkmen)
+        values
+        (seq_taccountinfo.nextval@bmanageCoobar,#{userName,jdbcType=VARCHAR},#{userPwd,jdbcType=VARCHAR},#{areaID,jdbcType=VARCHAR},#{email,jdbcType=VARCHAR},#{email,jdbcType=VARCHAR},#{mobile,jdbcType=VARCHAR},sysdate,sysdate,sysdate,#{realName,jdbcType=VARCHAR})
+    </insert>
+
+    <!--注册用户-->
+    <insert id="registerCoobar" parameterType="com.rainsoft.union.web.subsystem.model.Coobar">
+        <selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="id">
+            select seq_sys_user.nextval@bmanageCoobar as id from dual
+        </selectKey>
+        insert into sys_user@bmanageCoobar
+        (id,user_name,real_name,password,email,address,phone,role_id,create_time,enable)
+        values
+        (#{id},#{userName,jdbcType=VARCHAR},#{realName,jdbcType=VARCHAR},#{userPwd,jdbcType=VARCHAR},#{email,jdbcType=VARCHAR},#{addr,jdbcType=VARCHAR},#{mobile,jdbcType=VARCHAR},'1',sysdate,'1')
+    </insert>
+
+    <!--角色预设-->
+    <insert id="roleInit"><!-- 角色预设 11:运营经理 12:领班  13:收银员  14:店长-->
+        <selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="id">
+            select seq_sys_role.nextval@bmanageCoobar as id from dual
+        </selectKey>
+        INSERT INTO sys_role@bmanageCoobar(id, role_name, descn, status, remark, user_id)
+        select #{id},
+        role_name, descn, status, remark, #{sys_userID} from sys_role@bmanageCoobar
+        where id = #{roleID}
+    </insert>
+    <!--角色分配资源-->
+    <insert id="resourceInit">
+        INSERT INTO sys_role_resc@bmanageCoobar(id, role_id, resc_id, remark)
+        select seq_sys_role_resc.nextval@bmanageCoobar, #{sys_role_ID}, resc_id, remark from sys_role_resc@bmanageCoobar
+        where role_id = #{roleID}
+    </insert>
+
+    <!--获取会员基本信息同步给旺旺吧-->
+    <select id="getMemberInfo" resultType="com.rainsoft.union.web.subsystem.model.Coobar">
+        select a.name userName, a.pwd userPwd, a.Real_Name realName, a.area_ID areaID , a.email, a.mobile, a.addr
+        from t_sys_user a
+        where a.id = #{userID} and rowNum = 1
+    </select>
+    <!--插入购买信息-->
+    <insert id="saveBuyInfo">
+        insert into tUserInternetAssociate@bmanageCoobar
+        (id,userId,createTime,endTime,buyNum,serialNum,type)
+        values
+        (seq_tuserinternetassociate.nextval@bmanageCoobar,#{sys_userID},sysdate,to_date('9999-1-1','YYYY-MM-DD'),
+        #{placeNum},'0','2'<!--1代表试用 2代表正式使用-->
+        )
+    </insert>
+
+    <!--更新账号信息表-->
+    <update id="updateAccountInfo">
+        update tAccountInfo@bmanageCoobar
+        set password = #{userPwd,jdbcType=VARCHAR} where  username = #{userName,jdbcType=VARCHAR}
+    </update>
+
+    <!--更新系统用户表-->
+    <update id="updateSysUser">
+        update sys_user@bmanageCoobar
+        set password = #{userPwd,jdbcType=VARCHAR} where user_name = #{userName,jdbcType=VARCHAR}
+    </update>
+</mapper>

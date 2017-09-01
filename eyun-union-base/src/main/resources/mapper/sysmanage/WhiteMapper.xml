@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="com.rainsoft.union.web.sysmanage.dao.IWhiteDao">
+	<resultMap type="com.rainsoft.union.web.sysmanage.model.WhiteEntity" id="whiteMap">
+		<result property="id" column="id"/>
+		<result property="placeCode" column="placeCode"/>
+		<result property="placeName" column="placeName"/>
+		<result property="devMac" column="devMac"/>
+		<result property="surfUserType" column="surfUserType"/>
+		<result property="surfUserId" column="surfUserId"/>
+		<result property="userName" column="userName"/>
+		<result property="idCard" column="idCard"/>
+		<result property="mobile" column="mobile"/>                                      
+		<result property="createTime" column="create_time"/>
+	</resultMap>
+	<!-- 获取白名单设置列表 -->
+	<select id="getWhiteList" resultMap="whiteMap">
+		select whl.id                ,whl.placeCode           ,whl.surf_user_type  as surfUserType  ,whl.surf_user_id  as surfUserId
+		, whl.user_name as userName   , whl.id_card as idCard  , whl.mobile                          ,whl.status
+		, whl.dev_mac as devMac 	  ,whl.create_time 		    ,b.placeName
+		from t_whiteList_surf whl
+		inner join (
+				select distinct	p.memberID, p.placeID, p.placeCode, p.placeName
+				from t_place_user_related t
+				left join  basPlace p on p.placecode = t.place_code
+				where t.status = '8'and p.status= '8'
+					and t.user_id in ( select id from t_sys_user where id = #{memberID} or parent_id = #{memberID})
+		) b on whl.placecode = b.placeCode
+		<where>
+			<if test="placeCode != null and placeCode != '' ">
+				and whl.placecode = #{placeCode }
+			</if>
+			<if test="mobile != null and mobile != ''">
+				and whl.mobile like '%' || #{mobile} || '%'
+			</if>
+		</where>
+
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+
+	</select>
+	<!-- 更新认证的同步状态 -->
+	<update id="updateSync2AuthState" >
+		update t_whitelist_surf
+		<set>
+			<if test="sync2Auth != null and sync2Auth != ''">
+				sync_2_auth = #{sync2Auth } ,
+			</if>
+			<if test="devMac != null and devMac != ''">
+ 				dev_mac = #{devMac }
+			</if>
+		</set>
+		where id = #{id }
+	</update>
+	<!-- 新增白名单 -->
+	<select id="saveWhiteList" statementType="CALLABLE">
+		{call spUsr_addWhiteList(
+			#{placeCode,mode=IN,jdbcType=VARCHAR},
+			#{surfUserType,mode=IN,jdbcType=VARCHAR},
+			#{surfUserId,mode=IN,jdbcType=VARCHAR},
+			#{userName,mode=IN,jdbcType=VARCHAR},
+			#{idCard,mode=IN,jdbcType=VARCHAR},
+			#{mobile,mode=IN,jdbcType=VARCHAR},
+		    #{devMac,mode=IN,jdbcType=VARCHAR},
+
+			#{optorType,mode=IN,jdbcType=CHAR},
+			#{optorID,mode=IN,jdbcType=INTEGER},
+			#{outVal,mode=OUT,jdbcType=INTEGER}
+		)}
+	</select>
+	<!-- 修改白名单 -->
+	<select id="updateWhiteInfo" statementType="CALLABLE">
+		{call spUsr_update_WhiteInfo(
+		#{id,mode=IN,jdbcType=INTEGER},
+		#{placeCode,mode=IN,jdbcType=VARCHAR},
+
+		#{userName,mode=IN,jdbcType=VARCHAR},
+		#{idCard,mode=IN,jdbcType=VARCHAR},
+		#{mobile,mode=IN,jdbcType=VARCHAR},
+		#{devMac,mode=IN,jdbcType=VARCHAR},
+
+		#{optorType,mode=IN,jdbcType=CHAR},
+		#{optorID,mode=IN,jdbcType=INTEGER},
+		#{outVal,mode=OUT,jdbcType=INTEGER}
+		)}
+	</select>
+	<!-- 删除白名单 -->
+	<select id="delWhiteList" statementType="CALLABLE">
+		{call spusr_DelWhiteList(
+			#{id,mode=IN,jdbcType=INTEGER},
+			
+			#{optorType,mode=IN,jdbcType=CHAR},
+			#{optorID,mode=IN,jdbcType=INTEGER},
+			#{outVal,mode=OUT,jdbcType=INTEGER}
+		)} 
+	</select>
+</mapper>

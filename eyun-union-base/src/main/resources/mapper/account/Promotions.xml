@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.account.dao.PromotionsDao">
+    <select id="getPromotionsList" resultType="com.rainsoft.union.web.account.model.PromotionsModel">
+        select
+        a.certificate,
+        a.remark,
+        a.id,
+        b.placecode,
+        (select placeName from basplace where placecode = b.placeCode) placeName,
+        b.serialnum,
+        placedeviceid,
+        givewwbfee,
+        <!--wwbFee,-->
+        case a.status when 'P' then '已审核'
+                    when 'N' then '未审核'
+                    when '8' then '已到账'
+                    when 'Y' then '已到账'<!--兼容老数据-->
+                    end status,
+        optor,
+        a.rmbFee,
+        a.payChannel,
+        case  a.payChannel when '4' then (wwbFee-rmbFee) else wwbFee end wwbFee,
+        case a.payChannel when '9' then '云辰赠送' when '4' then '现金充值' end channelName,
+        to_char(opttime, 'YYYY-MM-DD HH24:MI:SS') presentTime
+        from rechargewwbrecord a, basplacedevice b,basplace c
+        where a.placedeviceid = b.id and b.placecode = c.placecode
+        <choose>
+            <when test="payChannel !=null and payChannel!=''">
+                and a.payChannel = #{payChannel}
+            </when>
+            <otherwise>
+                and (a.payChannel = '4' or a.payChannel = '9')<!--4,9代表现金充值和赠送-->
+            </otherwise>
+        </choose>
+        <if test="placeName !=null and placeName !=''">
+            and c.placeName like '%'||#{placeName}||'%'
+        </if>
+        <if test="status !=null and status !=''">
+            and a.status = #{status}
+        </if>
+        <if test="startTime !=null and startTime!=''">
+            and optTime >= to_date(#{startTime}, 'yyyy-MM-dd HH24:mi:ss')
+        </if>
+        <if test="endTime !=null and endTime!=''">
+            and optTime &lt;=to_date(#{endTime}, 'yyyy-MM-dd HH24:mi:ss')
+        </if>
+        <if test="SORT != null and SORT != ''">
+            order by ${SORT}
+        </if>
+        <if test="DIR != null and DIR != ''">
+            ${DIR}
+        </if>
+    </select>
+    <!--插入旺旺币充值记录-->
+    <insert id="presentWwb" parameterType="com.rainsoft.union.web.account.model.PromotionsModel">
+        insert into RECHARGEWwbRECORD
+        (id, memberId, placeDeviceId, wwbFee, status, opTor, optTime, rmbFee,payChannel,remark,certificate)
+        values
+        (seq_rechargeWwbRecordId.NextVal,
+        0,
+        #{placeDeviceId},
+        #{wwbFee},  <!--本充值旺旺币数-->
+        #{status}, #{userId}, sysdate,
+        #{rmbFee} ,#{payChannel,jdbcType=VARCHAR},#{remark,jdbcType=VARCHAR},#{certificate,jdbcType=VARCHAR})<!--9 代表赠送-->
+    </insert>
+    <delete id="deletePresent">
+        delete from RECHARGEWwbRECORD where id=#{id}
+    </delete>
+    <!--修改赠送旺旺币的状态-->
+    <update id="updatePresentWwb" parameterType="com.rainsoft.union.web.account.model.PromotionsModel">
+        update RECHARGEWwbRECORD
+        set
+        <if test="status!=null and status!=''">
+            status=#{status} ,
+        </if>
+        optTime=sysdate,opTor=#{userId}
+        <if test="wwbFee!=null and wwbFee!=''">
+            ,wwbFee = #{wwbFee}
+        </if>
+        <if test="rmbFee!=null and rmbFee!=''">
+            ,rmbFee = #{rmbFee}
+        </if>
+        <if test="remark!=null and remark!=''">
+            ,remark = #{remark}
+        </if>
+        <if test="certificate!=null and certificate!=''">
+            ,certificate = #{certificate}
+        </if>
+        where id = #{id}
+    </update>
+    <!--修改旺旺币余额表-->
+    <update id="updateWwbInfo" parameterType="com.rainsoft.union.web.account.model.PromotionsModel">
+        <!--update wwbAccountInfo set
+        totalBuyWwb =totalBuyWwb + #{wwbFee},
+        balance = balance + #{wwbFee}
+        where placeDeviceId = #{placeDeviceId}-->
+        update wwbAccountInfo set
+        totalBuyWwb =totalBuyWwb + (select wwbFee from RECHARGEWwbRECORD where id=#{id}),
+        balance = balance + (select wwbFee from RECHARGEWwbRECORD where id=#{id})
+        where placeDeviceId = (select placeDeviceId from RECHARGEWwbRECORD where id=#{id})
+    </update>
+    <!-- 易盟的登录名获取他下面的场所-->
+    <!--<select id="getPlaceListByEyun" parameterType="String" resultType="com.rainsoft.union.web.account.model.PromotionsModel">
+        select a.place_code placeCode ,c.placeName from t_place_user_related a ,t_sys_user b ,basplace c where a.user_id = b.id and a.place_Code = c.placecode
+        and b.name=#{name}
+    </select>-->
+    <!-- @author qianna,根据易盟账号，场所名称【模糊】，场所编号，设备号获取场所 -->
+    <select id="getPlaceListByParam" parameterType="String" resultType="com.rainsoft.union.web.account.model.PromotionsModel">
+        select distinct a.placeCode , a.placeName from basplace a
+        inner join basplacedevice b on a.placeCode = b.placeCode
+        inner join t_place_user_related c on c.place_code = b.placecode
+        inner join t_sys_user d on d.id = c.user_id
+        where (a.placecode = #{name}
+                or b.serialNum = #{name}
+                or d.name = #{name}
+                or a.placeName like #{name} || '%' )
+    </select>
+
+    <!--优惠策略查询-->
+    <select id="getWwbStrategyList" resultType="com.rainsoft.union.web.account.model.WwbStrategy">
+        select id,ref_code,Buy_Wwb,Present_Wwb,Use_Times,
+        to_char(Start_time,'yyyy-mm-dd hh24:mi:ss') startTime,
+        to_char(End_Time,'yyyy-mm-dd hh24:mi:ss') endTime,
+        creator,
+        case status when '0' then '未审核'
+                    when '8' then '已审核'
+        end status
+        from WWB_AREA_STRATEGY
+        <where>
+            <if test="refCode !=null and refCode!=''">
+                and ref_code like #{refCode}||'%'
+            </if>
+            <!--<if test="startTime !=null and startTime!=''">
+                and Start_time >= to_date(#{startTime}, 'yyyy-MM-dd HH24:mi:ss')
+            </if>
+            <if test="endTime !=null and endTime!=''">
+                and End_Time &lt;=to_date(#{endTime}, 'yyyy-MM-dd HH24:mi:ss')
+            </if>-->
+            <if test="validStatus == 1">
+                and sysdate between Start_time and End_Time
+            </if>
+            <if test="validStatus == 0">
+                and sysdate not between Start_time and End_Time
+            </if>
+            <if test="status !=null and status!=''">
+                and status=#{status}
+            </if>
+        </where>
+        <if test="SORT != null and SORT != ''">
+            order by ${SORT}
+        </if>
+        <if test="DIR != null and DIR != ''">
+            ${DIR}
+        </if>
+    </select>
+    <!--新增-->
+    <insert id="insertStrategy" parameterType="com.rainsoft.union.web.account.model.WwbStrategy">
+        insert into WWB_AREA_STRATEGY
+        (id ,Ref_Code,Buy_Wwb,Present_Wwb,Use_Times,Start_time,End_Time,creator,status)
+        values
+        (SEQ_WWB_AREA_STRATEGY_ID.nextVAL,#{refCode},#{buyWwb},#{presentWwb},#{useTimes},to_date(#{startTime}, 'yyyy-MM-dd HH24:mi:ss'),to_date(#{endTime}, 'yyyy-MM-dd HH24:mi:ss'),#{userId},'0')
+    </insert>
+    <!--修改-->
+    <update id="updateStrategy" parameterType="com.rainsoft.union.web.account.model.WwbStrategy">
+        update WWB_AREA_STRATEGY
+        set
+        <if test="buyWwb!= null and buyWwb != ''">
+            Buy_Wwb = #{buyWwb},
+        </if>
+        <if test="presentWwb!= null and presentWwb != ''">
+            Present_Wwb=#{presentWwb},
+        </if>
+        <if test="startTime!= null and startTime != ''">
+            Start_time= to_date(#{startTime}, 'yyyy-MM-dd HH24:mi:ss'),
+        </if>
+        <if test="endTime!= null and endTime != ''">
+            End_Time= to_date(#{endTime}, 'yyyy-MM-dd HH24:mi:ss'),
+        </if>
+        <if test="status!= null and status != ''">
+            status= #{status},
+        </if>
+        upDaTor=#{userId},
+        update_Time= sysdate
+        where id = #{id}
+    </update>
+
+</mapper>

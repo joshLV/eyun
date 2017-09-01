@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.PlatformUser">
+
+	<select id="findListBy" resultType="platformuser">
+		SELECT
+		    U.LOGIN_USERNAME,
+		    U.LOGIN_PASSWORD,
+		    U.USER_REALNAME,
+		    U.CREATE_TIME,
+		    U.UPDATE_TIME,
+		    U.STATUS,
+		    U.PLATFORM_ID,
+		    U.PLATFORM_NAME
+		FROM
+		    T_PLATFORM_USER U
+		WHERE
+		    U.STATUS='1'
+		<include refid="common.filtersUnderLine" />
+	</select>
+	
+	<update id="updatePlatformKey">
+		UPDATE T_PLATFORM_USER U
+			SET U.PLATFORM_ID   = #{platformId}
+			WHERE U.PLATFORM_ID = #{oldPlatformId}
+	</update>
+    <!-- @author qianna,  根据平台ID和用户登录账号获取登陆账号主键ID -->
+	<select id="getUserIdByParam" resultType="integer">
+		select id from t_platform_user where 1=1
+		<if test="loginUserName!=null and loginUserName != ''">
+			and login_userName = #{loginUsername }
+		</if>
+		<if test="platformId!=null and platformId != ''">
+			and platform_id = #{platformId }
+		</if>
+		and rowNum = 1;
+	</select>
+</mapper>

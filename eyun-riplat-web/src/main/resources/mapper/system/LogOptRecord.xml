@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd</SPAN>">
+<mapper namespace="com.rainsoft.base.web.system.model.LogOptRecord">
+	<resultMap id="logList" type="com.rainsoft.base.web.system.model.LogOptRecord">
+		<result column="id" property="id" jdbcType="INTEGER"/>
+		<result column="module_name" property="optModule" jdbcType="VARCHAR"/>
+		<result column="optAction" property="optAction" jdbcType="VARCHAR"/>
+		<result column="ip" property="ip" jdbcType="VARCHAR"/>
+		<result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+		<result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+		<result column="status" property="status" jdbcType="VARCHAR"/>
+		<result column="placeName" property="placeName" jdbcType="VARCHAR"/>
+		<result column="optorName" property="optorName" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<!-- 获取日志列表 -->
+	<select id="findListBy" resultMap="logList" parameterType="java.util.Map">
+		select * from(
+		select t1.*, t2.login_userName optorName
+		from t_user_log_record t1 left join t_platform_user t2 on t1.optor = t2.id 
+		where t1.optor in (select id from t_platform_user m where m.parent_user_id = ${creator} or m.id = ${creator})
+		)
+		<where>
+			<if test="placeCode != null and placeCode != '' and placeCode != '-1'">
+				and place_code = ${placeCode}
+			</if>
+			<include refid="common.filters" />
+		</where>
+		
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	
+	<!-- 保存日志 -->
+	<insert id="save" parameterType="com.rainsoft.base.web.system.model.LogOptRecord">
+		<selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="id">
+			select seq_logid.nextval as id from dual
+		</selectKey>
+		insert into t_user_log_record 
+		(id, optor, place_code, module_name, optAction, ip, start_time, end_time, remark, status)
+		values 
+		(#{id}, #{creator}, #{placeCode}, #{optModule}, #{optAction}, #{ip}, #{startTime}, #{endTime}, #{remark}, #{status})
+	</insert>
+</mapper>

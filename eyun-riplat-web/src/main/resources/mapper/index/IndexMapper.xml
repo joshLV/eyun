@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.index.model.Index">
+	<resultMap type="com.rainsoft.riplat.web.index.model.Index" id="UserInfoResultMap">
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="VARCHAR" />
+		<result column="updator" property="updator" jdbcType="VARCHAR" />
+		<result column="createTime" property="createTime" jdbcType="DATE" />
+		<result column="updatetime" property="updateTime" jdbcType="DATE" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="remarks" property="remark" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+
+		<result column="articleID" property="articleID" jdbcType="INTEGER" />
+		<result column="title" property="title" jdbcType="VARCHAR" />
+		<result column="validDate" property="validDate" jdbcType="VARCHAR" />
+		<result column="content" property="content" jdbcType="VARCHAR" />
+		<result column="fee" property="wwbBalance" jdbcType="VARCHAR" />
+		<result column="smsFee" property="noteBalance" jdbcType="VARCHAR" />
+		<result column="headImgUrl" property="memberHP" jdbcType="VARCHAR" />
+		<result column="memberID" property="userId" jdbcType="VARCHAR" />
+		<result column="createDate" property="createDate" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 查询新闻、公告列表 -->
+	<select id="findNewsBy" resultMap="UserInfoResultMap">
+		select a.articleID, a.title, a.validDate,
+		to_char(a.createTime, 'yyyy/MM/dd ')as createDate,b.content
+		from nwsArticle a, nwsArticlesContent b where a.articleID = b.articleID
+		and a.isRelease = '9' and a.articleType = #{articleType} order by a.createTime desc
+	</select>
+
+	<!-- 根据id查询新闻、公告明细 -->
+	<select id="findById" resultMap="UserInfoResultMap">
+		select a.title, a.validDate,
+		to_char(a.createTime, 'yyyy/MM/dd ')as createDate, b.content
+		from nwsArticle a, nwsArticlesContent b
+		where a.articleID = b.articleID and a.articleID = #{articleID}
+	</select>
+
+	<!-- 查询头像、旺旺币余额、短信余额 -->
+	<select id="findAccountInfo" resultMap="UserInfoResultMap">
+	<![CDATA[
+	    select 
+      		(select a.headImgUrl from usrMemberBase a where a.memberID = #{userId}) headImgUrl,
+      		(select (a.totalBuyWWBiFee - a.totalUseWWBiFee) as fee from bllAccountInfo a where  a.memberID = #{userId}) fee,
+      		(select 
+      			(select sum(bs.totalBuysmsnum - bs.totalUsesmsnum) as smsFee from bllSMSRemain bs, basplace b where b.memberID = #{userId} and bs.placeID = b.placeID  and smstype='01')
+      			+ (select (case when B.totalBuySMSNum is null then 0 else totalBuySMSNum end) as totalBuySMSNum from usrMemberLogin A left join bllMemberSMSRemain B on A.Memberid=B.MEMBERID where A.memberID = #{userId}) from dual 
+      		) smsFee
+       from dual
+	]]>
+	</select>
+</mapper>

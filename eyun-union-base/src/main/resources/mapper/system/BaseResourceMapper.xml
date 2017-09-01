@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.base.web.system.model.BaseResource">
+	<resultMap id="resourceList" type="com.rainsoft.base.web.system.model.BaseResource">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="type" property="type" jdbcType="VARCHAR" />
+		<result column="pid" property="pid" jdbcType="INTEGER" />
+		<result column="status" property="status" jdbcType="VARCHAR" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="url" property="url" jdbcType="VARCHAR" />
+		<result column="icon" property="icon" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="INTEGER" />
+		<result column="updator" property="updator" jdbcType="INTEGER" />
+		<result column="creatorName" property="creatorName" jdbcType="VARCHAR" />
+		<result column="updatorName" property="updatorName" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="preMenu" property="preMenu" jdbcType="VARCHAR" />
+		<result column="menuLevel" property="menuLevel" jdbcType="INTEGER" />
+		<result column="code" property="code" jdbcType="INTEGER" />
+		<result column="privilege" property="privilege" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 获取资源列表 -->
+	<select id="findListBy" parameterType="java.util.Map" resultMap="resourceList">
+			select * from(
+			select t1.*, nvl(t2.name, '系统') preMenu, v1.name creatorName, v2.name updatorName 
+			from t_sys_resource t1 
+			left join t_sys_resource t2 on t1.pid = t2.id 
+			left join t_sys_user v1 on t1.creator = v1.id left join 
+			t_sys_user v2 on t1.updator = v2.id order by t1.sort)
+			<where>
+				<include refid="common.filters" />				
+			</where>
+			<if test="SORT != null and SORT != ''">
+				order by ${SORT}
+			</if>
+			<if test="DIR != null and DIR != ''">
+				${DIR}
+			</if>
+	</select>
+	
+	<!-- 获取正在生效资源列表 -->
+	<select id="findEffectResource" parameterType="java.util.Map" resultMap="resourceList">
+			select * from(
+			select t1.*, nvl(t2.name, '系统') preMenu, v1.name creatorName, v2.name updatorName 
+			from t_sys_resource t1 
+			left join t_sys_resource t2 on t1.pid = t2.id 
+			left join t_sys_user v1 on t1.creator = v1.id left join 
+			t_sys_user v2 on t1.updator = v2.id where t1.status = 'e' order by t1.sort)
+	</select>
+		
+	<!--根据userId获取资源列表 -->
+	<select id="getResourceByUserId" parameterType="java.util.Map" resultMap="resourceList">
+		<choose>
+			<when test="id == 1">
+				select * from(
+				select t1.*, nvl(t2.name, '系统') preMenu, v1.name creatorName, v2.name updatorName 
+				from t_sys_resource t1 
+				left join t_sys_resource t2 on t1.pid = t2.id 
+				left join t_sys_user v1 on t1.creator = v1.id left join 
+				t_sys_user v2 on t1.updator = v2.id where t1.status = 'e' order by t1.sort)
+			</when>
+			<otherwise>
+				select t4.*
+				from t_sys_related_role t3
+				left join t_sys_resource t4 on t3.RELATED_ID = t4.id 
+				where t3.RELATED_TYPE = '2' and t4.status = 'e'
+				and t3.ROLE_ID in (select t1.ROLE_ID
+					from t_sys_related_role t1
+					where t1.RELATED_TYPE = '1'
+					and t1.RELATED_ID = #{id})
+			</otherwise>
+		</choose>
+	</select>
+	
+	<!-- 根据角色获取资源 -->
+	<select id="getResourceByRoleIds" parameterType="Integer" resultType="com.rainsoft.base.web.system.model.BaseResource">
+		select  t1.id,
+				t1.name,
+				t1.pid,
+				t1.type,
+				t1.icon,
+				t1.status,
+				t1.sort,
+				t1.url,
+				t1.menulevel,
+				t1.code,
+				t2.privilege
+		from t_sys_resource t1 left join t_sys_related_role t2 on t1.id = t2.related_id
+		where t2.related_type = '2' and t1.status = 'e' and t2.role_id = #{roleId} order by t1.menulevel,t1.sort
+	</select>
+	
+	<!-- 检查资源名称是否存在 -->
+	<select id="checkResourceName" parameterType="com.rainsoft.base.web.system.model.BaseResource" resultType="java.lang.Integer">
+		select 1 num from dual where exists( select name from t_sys_resource t
+		<where>
+			and t.name = #{name} and t.menulevel = #{menuLevel}
+			<if test="id != null and id > 0">
+				and t.id != #{id}
+			</if>
+		</where>
+		)
+	</select>
+	
+	<!-- 检查该位置是否存在资源 -->
+	<select id="checkResourceSort" parameterType="com.rainsoft.base.web.system.model.BaseResource" resultType="java.lang.Integer">
+		select 1 num from dual where exists( select sort from t_sys_resource t 
+		<where>
+			and t.pid = #{pid} and t.sort = #{sort}
+			<if test="id != null and id > 0">
+				and t.id != #{id}
+			</if>
+		</where>
+		)
+	</select>
+	
+	<!-- 插入资源 -->
+	<insert id="save" parameterType="com.rainsoft.base.web.system.model.BaseResource">
+		<selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="id">
+			select seq_resource_id.nextval as id from dual
+		</selectKey>
+		insert into t_sys_resource (id, name, type, pid, url, icon, status ,remark, creator, create_time, updator, sort, menulevel, code, privilege) 
+		values (#{id}, #{name}, #{type}, #{pid}, #{url}, #{icon}, #{status}, #{remark}, #{creator}, sysdate, #{creator}, #{sort}, #{menuLevel}, #{code}, #{privilege})
+	</insert>
+	
+	<!-- 更新资源 -->
+	<update id="update" parameterType="com.rainsoft.base.web.system.model.BaseResource">
+		update t_sys_resource set
+			name = #{name},
+			type = #{type},
+			pid = #{pid},
+			url = #{url},
+			icon = #{icon},
+			status = #{status},
+			remark = #{remark},
+			updator = #{updator},
+			sort = #{sort},
+			menulevel = #{menuLevel},
+			code = #{code},
+			privilege = #{privilege},
+			update_time = sysdate
+		where id = #{id}
+	</update>
+	
+	<!-- 检查资源是否被使用 -->
+	<select id="checkOnUse" parameterType="com.rainsoft.base.web.system.model.BaseResource" resultType="java.lang.Integer">
+		select 1 num from dual where exists(select role_id from t_sys_related_role srr where srr.related_type = '2' and srr.related_id = #{id})
+	</select>
+	
+	<!-- 删除资源 -->
+	<delete id="deleteById" parameterType="com.rainsoft.base.web.system.model.BaseResource">
+		delete from t_sys_resource where id = #{id}
+	</delete>
+	
+	<!-- 根据id获取资源 -->
+	<select id="findById" parameterType="com.rainsoft.base.web.system.model.BaseResource" resultType="com.rainsoft.base.web.system.model.BaseResource">
+		select id, 
+			name,
+			pid,
+			type,
+			icon,
+			status,
+			sort,
+			url,
+			menulevel,
+			code 
+		from t_sys_resource where id = #{id}
+	</select>
+</mapper>

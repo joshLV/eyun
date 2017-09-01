@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.systemManage.model.Material">
+	<resultMap type="com.rainsoft.riplat.web.systemManage.model.Material" id="materialResult">
+		<result property="id" column="materialId" />
+		<result property="materialName" column="materialName" />
+		<result property="materialTypeName" column="materialTypeName" />
+		<result property="status" column="status" />
+		<result property="remark" column="remarks" />
+		<result property="userId" column="memberId" />
+		<result property="updateTime" column="editTime" />
+	</resultMap>
+
+	<!--场所资料的列表查询 -->
+	<select id="findListBy" parameterType="com.rainsoft.riplat.web.systemManage.model.Material" resultMap="materialResult">
+		select
+		a.materialID as id,
+		a.materialName,
+		a.memberId,
+		a.materialType,
+		b.materialTypeName,
+		a.materialUrl,
+		a.webUrl_PC,
+		a.webUrl_M,
+		a.remarks,
+		a.status,
+		a.createTime,
+		<!--to_char(a.editTime,'yyyy-mm-dd hh24:mi:ss') as updateTime -->
+		a.editTime
+		from adMaterial a, view_materialType b
+		where a.materialType = b.materialType
+		and a.status != 'd'
+		<if test="userId!=null and userId!=''">
+			and memberId = #{userId}
+		</if>
+		<if test="id!=null and id!=''">
+			and materialId = #{id}
+		</if>
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	<!--id 查询修改时间 -->
+	<select id="getUpdateTimeByIds" parameterType="list" resultMap="materialResult">
+		select a.materialId ,editTime from adMaterial a where 1=1
+		<if test="list !=null">
+			and a.materialId in
+			<foreach collection="list" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+	<!--素材id 删除对应素材 -->
+	<delete id="deleteByIds">
+		delete from adMaterial
+		where materialId in
+		<foreach index="index" item="item" collection="array" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</delete>
+	<!--素材id 删除对应素材 -->
+	<delete id="deleteById">
+		delete from adMaterial
+		where materialId = #{id}
+	</delete>
+
+	<!-- 新增素材 调用存储过程 -->
+	<select id="save" parameterType="com.rainsoft.riplat.web.systemManage.model.Material" statementType="CALLABLE">
+		call spad_addMaterial(
+		#{userId,mode=IN,jdbcType=INTEGER},
+		#{materialName,mode=IN,jdbcType=VARCHAR},
+		#{materialType,mode=IN,jdbcType=CHAR},
+		#{materialUrl,mode=IN,jdbcType=VARCHAR},
+		#{webUrl_PC,mode=IN,jdbcType=VARCHAR},
+		#{webUrl_M,mode=IN,jdbcType=VARCHAR},
+		#{remark,mode=IN,jdbcType=VARCHAR},
+		1,
+		#{userId,mode=IN,jdbcType=INTEGER},
+		#{id,mode=OUT,jdbcType=INTEGER}
+		)
+	</select>
+	<!-- 修改素材 调用存储过程 -->
+	<select id="update" parameterType="com.rainsoft.riplat.web.systemManage.model.Material" statementType="CALLABLE">
+		call spad_uptMaterial(
+		#{userId,mode=IN,jdbcType=INTEGER},
+		#{id,mode=IN,jdbcType=INTEGER},
+		#{materialName,mode=IN,jdbcType=VARCHAR},
+		#{materialType,mode=IN,jdbcType=CHAR},
+		#{materialUrl,mode=IN,jdbcType=VARCHAR},
+		#{webUrl_PC,mode=IN,jdbcType=VARCHAR},
+		#{webUrl_M,mode=IN,jdbcType=VARCHAR},
+		#{remark,mode=IN,jdbcType=VARCHAR},
+		1,<!--操作类型默认是易盟用户 兼容老数据 -->
+		#{userId,mode=IN,jdbcType=INTEGER},
+		#{id,mode=OUT,jdbcType=INTEGER}
+		)
+	</select>
+
+	<!-- 素材状态变更操作（包括审核素材、会员自己提交审核等) -->
+	<select id="updateStatus" parameterType="com.rainsoft.riplat.web.systemManage.model.Material" statementType="CALLABLE">
+		call spad_uptMaterialStatus(
+		#{id,mode=IN,jdbcType=INTEGER},
+		#{status,mode=IN,jdbcType=CHAR},
+		'',<!--提交审核是不需要填写原因 -->
+		1,
+		#{userId,mode=IN,jdbcType=INTEGER},
+		#{id,mode=OUT,jdbcType=INTEGER}
+		)
+	</select>
+</mapper>

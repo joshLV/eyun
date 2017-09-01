@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.base.web.system.model.BaseDict">
+	<resultMap type="com.rainsoft.base.web.system.model.BaseDict"
+		id="baseDictResultMap">
+		<result column="datalabel" property="dataLabel" jdbcType="VARCHAR" />	<!--数据标签 -->
+		<result column="datacode" property="dataCode" jdbcType="VARCHAR" />		<!--数据编码 -->
+		<result column="datavalue" property="dataValue" jdbcType="VARCHAR" />	<!--值 -->
+		<result column="remarks" property="remark" jdbcType="VARCHAR" />	    <!--备注 -->
+		<result column="status" property="status" jdbcType="VARCHAR" />		    <!--状态 -->
+		<!-- <result column="creator" property="creator" jdbcType="INTEGER" />		创建者id
+		<result column="updator" property="updator" jdbcType="INTEGER" />	    编辑者id
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" /> 创建时间
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" /> 编辑时间 -->
+	</resultMap>
+	
+	<!-- 用于select查询、insert的公用抽取的列 -->
+	<sql id="commonSelectColumnsPrefix">
+
+	</sql>
+	
+	<!-- 查询数据字典列表-->
+	<select id="findListBy" parameterType="Integer" resultMap="baseDictResultMap">
+		select t.datalabel,t.datacode,t.datavalue,t.remarks,t.status 
+		from syspublicdict t 
+		<where>
+	      <include refid="common.filters" />
+        </where>
+        <if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	
+		<!-- 根据数据标签和数据编码查询数据字典 -->
+	<select id="findDict" parameterType="com.rainsoft.base.web.system.model.BaseDict" resultMap="baseDictResultMap">
+		select 
+		dataLabel,
+		dataCode
+		from 
+		syspublicdict 
+		where
+		dataLabel = #{dataLabel, jdbcType=VARCHAR}
+		and
+		dataCode =  #{dataCode, jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 保存数据字典 -->
+	<insert id="save" parameterType="com.rainsoft.base.web.system.model.BaseDict">
+		insert into
+		syspublicdict
+		(dataLabel,
+		 dataCode,
+		 dataValue,
+		 remarks,
+		 status)
+		values
+		(
+	        #{dataLabel,jdbcType=VARCHAR},
+			#{dataCode,jdbcType=VARCHAR},
+			#{dataValue,jdbcType=VARCHAR},
+			#{remark,jdbcType=VARCHAR},
+			'8'
+		)
+	</insert>
+	
+	<!-- 修改数据字典 -->
+	<update id="update" parameterType="com.rainsoft.base.web.system.model.BaseDict">
+		update
+		syspublicdict
+		set
+		<trim suffixOverrides=",">
+			<if test="dataValue!=null and dataValue!=''">
+				dataValue=#{dataValue, jdbcType=VARCHAR},
+			</if>
+			<if test="remark!=null and remark!=''">
+				remarks=#{remark, jdbcType=VARCHAR},
+			</if>
+			<if test="status!=null and status!=''">
+				status='8',
+			</if>
+		</trim>
+		where
+		dataLabel = #{dataLabel, jdbcType=VARCHAR}
+		and
+		dataCode=#{dataCode, jdbcType=VARCHAR}
+	</update>
+
+    <!-- 删除数据字典 -->
+	<delete id="deleteByCode" parameterType="com.rainsoft.base.web.system.model.BaseDict">
+		delete from
+		syspublicdict
+		where dataCode in (
+		select * from table(fn_split(#{searchValue}, ','))  
+		)
+	</delete>
+	
+</mapper>

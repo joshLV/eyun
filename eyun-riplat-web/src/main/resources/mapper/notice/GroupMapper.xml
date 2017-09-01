@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.Group">
+
+	<resultMap type="group" id="groupResultMap">
+		<result property="id" column="ID" />
+		<result property="name" column="NAME" />
+		<result property="type" column="TYPE" />
+		<collection property="members" ofType="member">
+			<result property="memberId" column="MEMBER_ID" />
+			<result property="memberName" column="MEMBER_NAME" />
+		</collection>
+	</resultMap>
+	
+	<select id="findListBy" resultType="group">
+		<include refid="groups" />
+		<if test="platUserId != null and platUserId!=''">
+			AND G.PLAT_USER_ID = #{platUserId}
+		</if>
+
+		<if test="type != null ">
+			AND G.TYPE = #{type}
+		</if>
+		
+		<include refid="common.filtersUnderLine" />
+		
+		UNION 
+		
+		<include refid="groups" />
+		
+		<if test="type != null ">
+			AND G.TYPE = #{type}
+		</if>
+			AND G.ID  &lt; 0
+		
+		<include refid="common.filtersUnderLine" />
+
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+
+	<delete id="deleteById">
+		DELETE FROM T_GROUP G WHERE G.ID = #{ id }
+	</delete>
+
+	<sql id="groups">
+		SELECT
+			G.ID,
+			G.NAME,
+			G.TYPE,
+			G.PLAT_USER_ID,
+			G.STATUS,
+			CASE
+			WHEN G.STATUS = 0 THEN '正常'
+			WHEN G.STATUS = 1 THEN '停用'
+			ELSE '正常'
+			END STATUS_NAME,
+			G.REMARKS
+			FROM
+			T_GROUP G
+			WHERE
+			G.STATUS = 0
+	</sql>
+
+	<resultMap type="com.rainsoft.base.web.system.model.BaseArea"
+		id="baseAreaMap">
+		<result property="id" column="areaId" />
+		<result property="name" column="Areaname" />
+	</resultMap>
+
+
+	<select id="getBaseAreaByUserId" resultMap="baseAreaMap">
+		SELECT AREA.AREANAME,
+		AREA.AREAID
+		FROM PUB.PUBAREA AREA
+		LEFT JOIN T_PLATFORM_USER_AREA T
+		ON AREA.AREAID
+		=T.AREA_ID
+		<if test="userId !=1">
+			AND T.USER_ID = #{userId}
+		</if>
+	</select>
+
+	<select id="save" resultType="group">
+		INSERT INTO T_GROUP T
+		VALUES(SEQ_GROUP.NEXTVAL,#{name},#{type},0,#{remarks},#{platUserId})
+	</select>
+
+	<update id="update">
+		UPDATE T_GROUP T
+		SET T.NAME = #{name},
+		T.TYPE=#{type},
+		T.STATUS=#{status},
+		T.REMARKS=#{remarks},
+		T.PLAT_USER_ID=#{platUserId}
+		WHERE T.ID = #{id}
+	</update>
+
+	<select id="getGroupWithId" resultType="group">
+		SELECT * FROM (SELECT *
+		FROM T_GROUP T WHERE T.NAME = #{name} AND T.TYPE=#{type} AND
+		T.PLAT_USER_ID = #{platUserId})
+		WHERE ROWNUM = 1
+	</select>
+
+	<select id="findById" resultType="group">
+		SELECT * FROM (SELECT * FROM
+		T_GROUP T WHERE T.ID =#{id})
+		WHERE ROWNUM = 1
+	</select>
+	<!-- 根据用户所管辖区域加载组 -->
+	<select id="loadGroupData" resultMap="groupResultMap">
+		SELECT G.ID,
+		G.NAME,
+		G.TYPE,
+		<if test="type == 0">
+			EDA.ID MEMBER_ID,
+			EDA.USER_NAME MEMBER_NAME,
+			EDA.MOBILE MOBILE,
+		    EDA.STATUS STATUS
+		</if>
+
+		<if test="type == 1">
+			SER.PLACENAME MEMBER_NAME,
+			SER.PLACEID MEMBER_ID
+		</if>
+
+		FROM T_GROUP G
+		LEFT JOIN T_MEMBER_CORRELATION_GROUP MCG
+		ON MCG.GROUP_ID
+		= G.ID
+
+		<if test="type == 0">
+			LEFT JOIN T_EDA_APP_MEMBERS EDA
+			ON EDA.ID = MCG.MEMBER_ID
+		</if>
+
+		<if test="type == 1">
+			LEFT JOIN BMANAGE.BASPLACE SER
+			ON SER.PLACEID = MCG.MEMBER_ID
+		</if>
+		WHERE G.ID = #{id}
+		AND G.TYPE = #{type}
+	</select>
+	
+</mapper>

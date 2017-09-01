@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.Place">
+
+
+<resultMap type="place" id="placeList">
+		<result property="id" column="ID" />
+		<result property="placeCode" column="place_code" />
+		<result property="placeName" column="place_name" />
+		<result property="areaName" column="area_name" />
+		<result property="isSelected" column="IS_SELECTED" />
+		
+	</resultMap>
+
+	<select id="findListBy" resultType="place">
+		<include refid="places" />
+		
+		<where>
+			VE.place_id != 0  
+			<if test="isSelected == 1">
+				AND MCG.ID IS NOT NULL
+			</if>
+			<include refid="common.filtersUnderLine" />
+		</where>
+		
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	
+	<!-- 搜索当前用户所建立组中在管辖区域的场所-->
+<!-- 	<select id="loadPlaceDate" parameterType="String" resultType="place"> -->
+	
+<!-- 	SELECT T.ID, -->
+<!--       	   T.PLACE_CODE, -->
+<!--            T.PLACE_NAME, -->
+<!--            AREA.AREANAME AREA_NAME, -->
+<!--            AREA.AREAID -->
+<!--     	   FROM T_SERVICE T -->
+<!--          LEFT JOIN T_MEMBER_CORRELATION_GROUP MCG -->
+<!--            ON MCG.GROUP_ID = T.ID -->
+<!--           JOIN PUB.PUBAREA AREA -->
+<!--            ON AREA.AREAID = T.AREA_ID -->
+<!--         LEFT JOIN T_EDA_APP_MEMBERS EDA -->
+<!--            ON EDA.ID = MCG.MEMBER_ID -->
+<!--       left join T_PLATFORM_USER_AREA AREA -->
+<!--            ON AREA.USER_ID=EDA.EDA_ID -->
+<!--     WHERE  MCG.MEMBER_TYPE='1' -->
+<!--            AND  MCG.GROUP_ID =#{groupId}   -->
+	
+<!-- 	</select> -->
+	
+	
+	<!-- 搜索当前用户所建立组中在管辖区域场所内且显示当前组是否已标记  -->
+	<sql id="places">
+		SELECT DISTINCT VE.PLACE_ID ID,
+			VE.PLACE_CODE,
+			VE.PLACE_NAME,
+			VE.AREA_NAME ,
+			VE.AREA_ID,
+			CASE WHEN MCG.ID IS NOT NULL  THEN 1
+			ELSE 0	  END IS_SELECTED
+			FROM V_EDAINFOBINDPLACE VE
+		JOIN
+		(SELECT PA.AREAID  FROM PUBAREA PA
+			WHERE PA.IFLEAF          = 'Y'
+			CONNECT BY PA.PARENTID = PRIOR PA.AREAID
+			START WITH PA.AREAID  IN
+			(SELECT tpua.area_id  FROM t_platform_user_area  tpua
+			inner join t_platform_user tpu on tpua.user_id = tpu.id  WHERE tpu.login_username = #{userName} )
+		) temp	ON temp.areaid = VE.AREA_ID
+		LEFT JOIN
+			(SELECT T.ID,  T.MEMBER_ID FROM T_MEMBER_CORRELATION_GROUP T
+			WHERE T.MEMBER_TYPE = '1'	  AND T.GROUP_ID      = #{groupId}
+		) MCG ON VE.PLACE_ID = MCG.MEMBER_ID
+	</sql>
+	
+</mapper>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.account.dao.IWwbDetailDao">
+	
+	<resultMap type="com.rainsoft.union.web.account.model.WwbBuyRecord" id="WwbBuyRecordList">
+		<result column="RMBFee" property="RMBFee" />
+		<result column="WWBFee" property="WWBFee" />
+		<result column="optorName" property="optorName" />
+		<result column="optTime" property="optTime" />
+		<result column="status" property="status" />
+	</resultMap>
+	
+	<!-- 获取购买旺旺币记录 -->
+	<select id="getBuyWwbRecord" resultMap="WwbBuyRecordList">
+		with c as (select * from
+			(
+				select t.rmbfee RMBFee, t.wwbfee WWBFee, m.name optorName, t.opttime,t.status,payChannel
+				from rechargeWwbRecord t left join t_sys_user m on t.optor = m.id where t.placeDeviceId = #{map.placeDeviceId}
+				union all 
+				select 0.0 RMBFee, w.ordermoneycount WWBFee, cast('系统同步' as nvarchar2(10)) optorName, w.orderStartTime opttime,'8' status,'5' payChannel
+				from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum 
+				where pd.id = #{map.placeDeviceId} and w.orderType = '2' group by w.ordermoneycount, w.orderStartTime, w.ordernum
+			) 
+			<where>
+				<if test="map.startTime != null and map.startTime != ''">
+					and opttime &gt;= to_date(#{map.startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+				</if>
+				<if test="map.endTime != null and map.endTime != ''">
+					and opttime &lt;= to_date(#{map.endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+				</if>
+			</where>
+			order by optTime desc
+		)
+		select RowNum id, c.* from c
+		<if test="map.SORT != null and map.SORT != ''">
+			order by ${map.SORT}
+		</if>
+		<if test="map.DIR != null and map.DIR != ''">
+			${map.DIR}
+		</if>
+	</select>
+	
+	<resultMap type="com.rainsoft.union.web.account.model.WwbUseRecord" id="wwbUseRecordList">
+		<result column="placeCode" property="placeCode" />
+		<result column="serialNum" property="serialNum" />
+		<result column="orderNum" property="orderNum" />
+		<result column="orderMoneyCount" property="orderMoneyCount" />
+		<result column="orderStartTime" property="orderStartTime" />
+		<result column="orderEndTime" property="orderEndTime" />
+		<result column="certificateNum" property="certificateNum" />
+		<result column="cardNum" property="cardNum" />
+		<result column="cardType" property="cardType" />
+		<result column="money" property="money" />
+		<result column="startTime" property="startTime" />
+		<result column="endTime" property="endTime" />
+		<result column="name" property="name" />
+		<result column="balance" property="balance" />
+	</resultMap>
+	
+	<!-- 获取消费旺旺币记录 -->
+	<select id="getWwbUseRecord" resultMap="wwbUseRecordList">
+		with c as ( 
+			select w.ordernum, w.ordermoneycount ordermoneycount, w.orderStartTime, w.orderEndTime, w.balance balance 
+			from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum
+			where pd.id = #{map.placeDeviceId} and w.orderType = '1' 
+			<if test="map.startTime != null and map.startTime != ''">
+				and orderStartTime &gt;= to_date(#{map.startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+			</if>
+			<if test="map.endTime != null and map.endTime != ''">
+				and orderStartTime &lt;= to_date(#{map.endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+			</if>
+			group by w.ordernum, w.ordermoneycount, w.orderStartTime, w.orderEndTime,w.balance order by w.orderEndTime desc
+		)
+		select RowNum id, c.* from c
+		<if test="map.SORT != null and map.SORT != ''">
+			order by ${map.SORT}
+		</if>
+		<if test="map.DIR != null and map.DIR != ''">
+			${map.DIR}
+		</if>
+	</select>
+	
+	<!-- 获取消费旺旺币详细记录 -->
+	<select id="getWwbUseRecordDetail" parameterType="com.rainsoft.union.web.account.model.WwbAccount" resultMap="wwbUseRecordList">
+		select w.name, w.certificatenum, w.cardnum, w.cardtype, w.money money, w.starttime, w.endtime from wwbconsumptionrecords w left join basplacedevice pd on w.placecode = pd.placecode and w.serialnum = pd.serialnum
+		where pd.id = #{wwbAccount.placeDeviceId} and w.orderNum = #{wwbAccount.orderNum} order by w.starttime desc
+	</select>
+</mapper>

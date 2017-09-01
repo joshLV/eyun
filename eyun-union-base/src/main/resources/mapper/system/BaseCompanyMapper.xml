@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.base.web.system.model.BaseCompany">
+	<resultMap type="com.rainsoft.base.web.system.model.BaseCompany" id="baseCompanyResult">
+		<result property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="code" column="code" />
+	</resultMap>
+
+	<!--场所资料的列表查询 -->
+	<select id="getPlaceList" parameterType="java.util.Map" resultMap="baseCompanyResult">
+		<!--select b.code, b.name from t_place_user_related a left join t_bas_place_info b on b.code = a.place_code where a.user_id = #{userId}-->
+		select b.placeCode code, b.placeName name from t_place_user_related a left join basPlace b on b.placeCode =
+		a.place_code where a.user_id = #{userId}
+	</select>
+	
+	<!-- 获取用户及其子用户下拉框列表 -->
+	<select id="getUserList" parameterType="Integer" resultMap="baseCompanyResult">
+		select id, name from t_sys_user t where t.parent_id = #{userId} or t.id = #{userId} and t.status != 'd' and t.status != 'a'
+	</select>
+</mapper>

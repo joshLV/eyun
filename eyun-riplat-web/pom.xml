@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.eyun</groupId>
+		<artifactId>eyun-root</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>eyun-riplat</artifactId>
+	<packaging>war</packaging>
+	<name>eyun-riplat-web</name>
+	<description>eyun-riplat-web</description>
+	<build>
+		<finalName>eyun-riplat</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.tomcat.maven</groupId>
+				<artifactId>tomcat7-maven-plugin</artifactId>
+				<version>2.2</version>
+				<configuration>
+					<port>8180</port>
+					<path>/${project.artifactId}</path>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<!-- 配置依赖 -->
+	<dependencies>
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>eyun-base-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+		
+		<!-- 百度富文本编辑器 -->
+		<dependency>
+			<groupId>com.baidu.ueditor</groupId>
+			<artifactId>editor</artifactId>
+			<version>1.1.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.baidu.ueditor</groupId>
+			<artifactId>json</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.quartz-scheduler</groupId>
+			<artifactId>quartz</artifactId>
+			<version>2.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>1.10.19</version>
+		</dependency>
+	</dependencies>
+
+</project>

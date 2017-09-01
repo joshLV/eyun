@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="common">
+
+	<sql id="filters">
+		<if test="FILTERS != null and FILTERS.size() != 0">
+			<foreach collection="FILTERS" item="item">
+				<choose>
+					<when test="item.fieldType == @com.rainsoft.base.common.model.FieldType@I and item.valueStr == '-1' "><!-- 适应下拉框默认为-1的情况 -->
+					</when>
+					<otherwise>
+						<choose>
+							<when test="item.ignoreCase">
+								AND UPPER(${item.property})
+							</when>
+							<otherwise>
+								AND ${item.property}
+							</otherwise>
+						</choose>
+						<choose>
+							<when test="item.valueStr == '__NULL__'">
+								IS NULL
+							</when>
+							<otherwise>
+								${item.operation.op}
+								<choose>
+									<!-- 此处的ognl关键字只能用小写 -->
+									<when
+										test="item.fieldType == @com.rainsoft.base.common.model.FieldType@D and item.operation == @com.rainsoft.base.common.model.Operation@LE">
+										<choose>
+											<when test="item.valueStr.length()==10">
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd') + 1
+											</when>
+											<otherwise>
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd HH24:mi:ss') + 1
+											</otherwise>
+										</choose>
+									</when>
+									<when
+										test="item.fieldType == @com.rainsoft.base.common.model.FieldType@D">
+										<choose>
+											<when test="item.valueStr.length()==10">
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd')
+											</when>
+											<otherwise>
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd HH24:mi:ss')
+											</otherwise>
+										</choose>
+									</when>
+									<when test="item.ignoreCase">
+										UPPER(#{item.valueStr})
+									</when>
+									<otherwise>
+										#{item.valueStr}
+									</otherwise>
+								</choose>
+							</otherwise>
+						</choose>
+					</otherwise>
+				</choose>
+			</foreach>
+		</if>
+	</sql>
+	
+	<sql id="filtersUnderLine">
+		<if test="FILTERS != null and FILTERS.size() != 0">
+			<foreach collection="FILTERS" item="item">
+				<choose>
+					<when test="item.fieldType == @com.rainsoft.base.common.model.FieldType@I and item.valueStr == '-1' "><!-- 适应下拉框默认为-1的情况 -->
+					</when>
+					<otherwise>
+						<choose>
+							<when test="item.ignoreCase">
+								AND UPPER(${item.propertyStr})
+							</when>
+							<otherwise>
+								AND ${item.propertyStr}
+							</otherwise>
+						</choose>
+						<choose>
+							<when test="item.valueStr == '__NULL__'">
+								IS NULL
+							</when>
+							<otherwise>
+								${item.operation.op}
+								<choose>
+									<!-- 此处的ognl关键字只能用小写 -->
+									<when
+										test="item.fieldType == @com.rainsoft.base.common.model.FieldType@D and item.operation == @com.rainsoft.base.common.model.Operation@LE">
+										<choose>
+											<when test="item.valueStr.length()==10">
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd') + 1
+											</when>
+											<otherwise>
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd HH24:mi:ss') + 1
+											</otherwise>
+										</choose>
+									</when>
+									<when
+										test="item.fieldType == @com.rainsoft.base.common.model.FieldType@D">
+										<choose>
+											<when test="item.valueStr.length()==10">
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd')
+											</when>
+											<otherwise>
+												TO_DATE(#{item.valueStr}, 'yyyy-mm-dd HH24:mi:ss')
+											</otherwise>
+										</choose>
+									</when>
+									<when test="item.ignoreCase">
+										UPPER(#{item.valueStr})
+									</when>
+									<otherwise>
+										#{item.valueStr}
+									</otherwise>
+								</choose>
+							</otherwise>
+						</choose>
+					</otherwise>
+				</choose>
+			</foreach>
+		</if>
+	</sql>
+
+	<sql id="sorts">
+		<if test="sorts != null and sorts.size() != 0">
+			ORDER BY
+			<foreach collection="sorts" item="item">
+				${item.propertyStr} ${item.direction.op},
+			</foreach>
+		</if>
+	</sql>
+</mapper>
+

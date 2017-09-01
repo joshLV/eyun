@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.sysmanage.model.SystemParam">
+
+	<resultMap id="systemParamList" type="com.rainsoft.union.web.sysmanage.model.SystemParam">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="placeId" property="placeId" jdbcType="INTEGER" />
+		<result column="placeCode" property="placeCode" jdbcType="VARCHAR" />
+		<result column="placeName" property="placeName" jdbcType="VARCHAR" />
+		<result column="ctrlCode" property="ctrlCode" jdbcType="VARCHAR" />
+		<result column="contents" property="protocol" jdbcType="VARCHAR" />
+		<result column="discountInfo" property="discountInfo" jdbcType="VARCHAR" />
+	</resultMap>  
+	
+	<!-- 获取系统参数列表 -->
+	<select id="findListBy"  resultMap="systemParamList">
+					select 
+				         substr(t.ctrlcode, 1, 1) ifJoinMem,
+				         substr(t.ctrlcode, 5, 1) ifRemind,
+				         t.placeid id,
+				         t.ctrlcode,
+				         t.placeCode,
+				         t.placeName,
+				         b.contents protocol,
+				         b.discountinfo,
+				         case
+					    when t.memberid is not null
+					    then 1
+					    else 0
+					   end accountresource
+				    from basplace t
+				    left join busplaceuseragreement b
+				      on t.placeid = b.placeid
+				     left join t_place_user_related n 
+				     on n.place_code=t.placecode
+				     where 1=1
+				     <if test="creator != null and creator != '' "> 
+				      	and n.user_id = #{creator}
+				     </if>
+					<if test="placeCode != null and placeCode != '' and placeCode != -1">
+						and t.placeCode = #{placeCode}
+					</if>
+					<if test="SORT != null and SORT != ''">
+						order by ${SORT}
+					</if>
+					<if test="DIR != null and DIR != ''">
+						${DIR}
+					</if>
+	</select>
+	<!-- 修改场所是否加入会员 -->
+	<update id="updateAgreement" parameterType="com.rainsoft.union.web.sysmanage.model.SystemParam">
+		update busplaceuseragreement 
+				set contents=#{protocol},
+					discountInfo=#{discountInfo},
+					createTime=sysdate
+					where placeId=#{placeId}
+	</update>
+	<!-- 获取场所的Id -->
+	<select id="getPlaceById" parameterType="com.rainsoft.union.web.sysmanage.model.SystemParam" resultType="com.rainsoft.union.web.sysmanage.model.SystemParam">
+		select agr.placeid,agr.contents,agr.discountinfo,agr.createtime 
+							from busplaceuseragreement agr 
+							where agr.placeid=#{placeId,jdbcType=INTEGER}
+	</select>
+	<!-- 修改场所认证方式-->
+	<update id="updateApprove" parameterType="com.rainsoft.union.web.sysmanage.model.SystemParam">
+		 update basPlace 
+        	set ctrlCode =  #{CtrlCode}
+        	where placeID = #{placeId}
+	</update>
+	<!-- 添加加入会员协议 -->
+	<insert id="save" parameterType="com.rainsoft.union.web.sysmanage.model.SystemParam">
+		insert into busplaceuseragreement(placeId,contents,discountInfo,createTime)
+					values(#{placeId},#{protocol},#{discountInfo},sysdate)
+	</insert>
+</mapper>

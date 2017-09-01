@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.systemManage.model.DeviceData">
+	<resultMap type="com.rainsoft.riplat.web.systemManage.model.DeviceData" id="deviceResult">
+		<result property="id" column="deviceID" />
+		<result property="placeName" column="placeName" />
+		<result property="hardwareID" column="hardwareID" />
+		<result property="status" column="status" />
+		<result property="registerTime" column="registerTime" />
+		<result property="remark" column="remarks" />
+
+	</resultMap>
+
+	<!--设备资料的列表查询 -->
+	<select id="findListBy" parameterType="com.rainsoft.riplat.web.systemManage.model.DeviceData" resultMap="deviceResult">
+		select
+		deviceID as id,
+		hardwareID,
+		remarks,
+		(select placeName from basplace where placeId =d.placeId)as placeName,
+		status,
+		to_char(registerTime,'yyyy-MM-dd') as registerTime
+		from basDevice d where 1=1
+		<if test="userId!=null and userId!=''">
+			and memberId = #{userId}
+		</if>
+		<if test="placeID!=null and placeID!=''">
+			and placeID = #{placeID}
+		</if>
+		<if test="id!=null and id !=''">
+			and deviceID = #{id}
+		</if>
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+
+</mapper>

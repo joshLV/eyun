@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.EdaAppMembers">
+
+
+<resultMap type="edaAppMembers" id="edaUserList">
+		<result property="id" column="ID" />
+		<result property="edaId" column="EDA_ID" />
+		<result property="userName" column="USER_NAME" />
+		<result property="mobile" column="MOBILE" />
+		<result property="isSelected" column="IS_SELECTED" />
+		
+	</resultMap>
+
+	<select id="findListBy" resultType="edaAppMembers">
+		<include refid="edaUser" />
+				
+		<where>
+			and VE.place_id != 0
+			<if test="isSelected == 1">
+				AND MCG.ID IS NOT NULL
+			</if>
+			
+			<include refid="common.filtersUnderLine" />
+		</where>		
+	</select>
+	<!-- 搜索当前易达用户所建立组中在管辖区域场所内的易达 用户-->
+<!-- 	<select id="loadEdaDate" parameterType="String" resultType="edaAppMembers"> -->
+<!-- 	SELECT  G.ID, -->
+<!-- 		    G.NAME, -->
+<!-- 		    G.TYPE, -->
+<!-- 		    EDA.EDA_ID, -->
+<!-- 		    EDA.USER_NAME, -->
+<!-- 		    EDA.MOBILE, -->
+<!-- 		    EDA.STATUS, -->
+<!-- 		    CASE -->
+<!-- 		      WHEN EDA.STATUS= 1 THEN '正常' -->
+<!-- 		      WHEN EDA.STATUS= 0 THEN '停用' -->
+<!-- 		      ELSE '正常' -->
+<!-- 		     END STATUS_NAME -->
+<!--     FROM T_GROUP G -->
+<!--     LEFT JOIN T_MEMBER_CORRELATION_GROUP MCG -->
+<!--         ON MCG.GROUP_ID = G.ID -->
+<!--     LEFT JOIN T_EDA_APP_MEMBERS EDA -->
+<!--         ON EDA.ID = MCG.MEMBER_ID  -->
+<!--     LEFT JOIN T_SERVICE SER -->
+<!--         ON SER.ID = MCG.MEMBER_ID -->
+  
+<!--     WHERE MCG.GROUP_ID =#{groupId} -->
+	
+	
+<!-- 	</select> -->
+	<!-- 搜索当前易达用户所建立组中在管辖区域场所内且显示当的用户是否已标记 -->
+	<sql id="edaUser">
+		SELECT DISTINCT VE.ID ID,
+		  VE.EDA_ID ,
+		  VE.EDA_NAME,
+		  VE.MOBILE,
+		  VE.AREA_ID,
+		  VE.AREA_NAME,
+		  CASE
+		    WHEN MCG.ID IS NOT NULL
+		    THEN 1
+		    ELSE 0
+		  END IS_SELECTED
+		FROM V_EDAINFOBINDPLACE VE
+		JOIN
+		  (SELECT PA.AREAID
+		  FROM PUBAREA PA
+		  WHERE PA.IFLEAF          = 'Y'
+		    CONNECT BY PA.PARENTID = PRIOR PA.AREAID
+		    START WITH PA.AREAID  IN
+		    (SELECT TPUA.AREA_ID FROM T_PLATFORM_USER_AREA TPUA WHERE TPUA.USER_ID = #{userId}
+		    )
+		  ) temp
+		ON temp.areaid = VE.AREA_ID
+		LEFT JOIN
+		  (SELECT T.ID,
+		    T.MEMBER_ID
+		  FROM T_MEMBER_CORRELATION_GROUP T
+		  WHERE T.MEMBER_TYPE = '0'
+		  AND T.GROUP_ID      = #{groupId}
+		  ) MCG
+		ON VE.ID = MCG.MEMBER_ID
+	</sql>
+	
+</mapper>

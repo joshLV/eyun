@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.sysmanage.model.Portal">
+    <resultMap type="com.rainsoft.union.web.sysmanage.model.Portal" id="portalResult">
+        <result property="updateTime" column="editTime"/>
+        <result property="userId" column="memberId"/>
+    </resultMap>
+
+    <!--模版列表查询 -->
+    <select id="findListBy" parameterType="com.rainsoft.union.web.sysmanage.model.Portal" resultMap="portalResult">
+        select
+        a.portalModelID as id,
+        a.portalModelName,
+        a.isDefault,
+        a.status,
+        a.createTime,
+        a.editTime,
+        b.placeName,
+        a.placeId
+        from basPortalModel a
+        left join basplace b
+        on a.placeId= b.placeId
+        <where>
+            <if test="userId!=null and userId != ''">
+                and b.memberId=#{userId}
+            </if>
+            <if test="SORT != null and SORT != ''">
+                order by ${SORT}
+            </if>
+            <if test="DIR != null and DIR != ''">
+                ${DIR}
+            </if>
+        </where>
+
+    </select>
+
+    <!--id 查询修改时间 可传入多个 -->
+    <select id="getUpdateTimeByIds" parameterType="list" resultMap="portalResult">
+        select a.portalmodelId id ,editTime from basportalmodel a where 1=1
+        <if test="list !=null">
+            and a.portalmodelId in
+            <foreach collection="list" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--新增portal模板-->
+    <insert id="save">
+        insert into basPortalModel
+        (portalModelID, placeID, rootPortallModelID, portalModelName, title,
+        backGroudUrl, logoUrl, position_N, position1MaterialID, position1Url,
+        position2MaterialID, position2Url, position3MaterialID, position3Url, position4MaterialID,
+        position4Url, position5MaterialID, position5Url, position6MaterialID, position6Url,
+        position7MaterialID, position7Url, position8MaterialID, position8Url, position9MaterialID,
+        position9Url, successToUrl, mobileMaterial1ID, mobileMaterial1Url, mobileMaterial2ID,
+        mobileMaterial2Url, mobileMaterial3ID, mobileMaterial3Url, mobileMaterial4ID, mobileMaterial4Url,
+        messages, ISDEFAULT,logoID,backGroudID,
+        createTime, editTime)
+        values
+        (seq_portalModelID.nextVal, #{placeId,jdbcType=INTEGER}, '202', #{portalModelName,jdbcType=VARCHAR},
+        #{title,jdbcType=VARCHAR},
+        #{backGroudUrl,jdbcType=VARCHAR}, #{logoUrl,jdbcType=VARCHAR}, '9', #{position1MaterialID,jdbcType=INTEGER},
+        #{position1Url,jdbcType=VARCHAR},
+        #{position2MaterialID,jdbcType=INTEGER},#{position2Url,jdbcType=VARCHAR},
+        #{position3MaterialID,jdbcType=INTEGER}, #{position3Url,jdbcType=VARCHAR},
+        #{position4MaterialID,jdbcType=INTEGER},
+        #{position4Url,jdbcType=VARCHAR}, #{position5MaterialID,jdbcType=INTEGER},#{position5Url,jdbcType=VARCHAR},
+        #{position6MaterialID,jdbcType=INTEGER}, #{position6Url,jdbcType=VARCHAR},
+        #{position7MaterialID,jdbcType=INTEGER},#{position7Url,jdbcType=VARCHAR},
+        #{position8MaterialID,jdbcType=INTEGER}, #{position8Url,jdbcType=VARCHAR},
+        #{position9MaterialID,jdbcType=INTEGER},
+        #{position9Url,jdbcType=VARCHAR}, #{successToUrl,jdbcType=VARCHAR}, #{mobileMaterial1ID,jdbcType=INTEGER},
+        #{mobileMaterial1Url,jdbcType=VARCHAR}, #{mobileMaterial1ID,jdbcType=VARCHAR},
+        #{mobileMaterial2Url,jdbcType=VARCHAR}, #{mobileMaterial3ID,jdbcType=INTEGER},
+        #{mobileMaterial3Url,jdbcType=VARCHAR}, #{mobileMaterial4ID,jdbcType=INTEGER},
+        #{mobileMaterial4Url,jdbcType=VARCHAR},
+        #{messages,jdbcType=VARCHAR}, 'N',#{logoID,jdbcType=INTEGER},#{backGroudID,jdbcType=INTEGER},
+        sysdate, sysdate
+        )
+    </insert>
+    <!--编辑portal模版-->
+    <update id="update">
+        update basPortalModel
+        set
+        <if test="status!= null and status != '' ">
+            status = #{status},
+        </if>
+        <if test="isDefault!= null and isDefault != '' ">
+            isDefault = #{isDefault},
+        </if>
+        editTime = sysdate
+        <where>
+            <if test="id !=null and id != ''">
+                and portalModelID = #{id}
+            </if>
+            <if test="placeId!=null and placeId !=''">
+                and placeId= #{placeId}
+            </if>
+        </where>
+
+    </update>
+
+    <update id="updatePortal">
+        update basPortalModel
+        set
+        portalModelName = #{portalModelName,jdbcType=VARCHAR},
+        title = #{title,jdbcType=VARCHAR},
+        backGroudUrl = #{backGroudUrl,jdbcType=VARCHAR},
+        backGroudID = #{backGroudID,jdbcType=INTEGER},
+        logoUrl = #{logoUrl,jdbcType=VARCHAR},
+        logoID = #{logoID,jdbcType=INTEGER},
+        position1MaterialID = #{position1MaterialID,jdbcType=INTEGER},
+        position1Url = #{position1Url,jdbcType=VARCHAR},
+        position2MaterialID = #{position2MaterialID,jdbcType=INTEGER},
+        position2Url = #{position2Url,jdbcType=VARCHAR},
+        position3MaterialID = #{position3MaterialID,jdbcType=INTEGER},
+        position3Url = #{position3Url,jdbcType=VARCHAR},
+        position4MaterialID = #{position4MaterialID,jdbcType=INTEGER},
+        position4Url = #{position4Url,jdbcType=VARCHAR},
+        position5MaterialID = #{position5MaterialID,jdbcType=INTEGER},
+        position5Url = #{position5Url,jdbcType=VARCHAR},
+        position6MaterialID = #{position6MaterialID,jdbcType=INTEGER},
+        position6Url = #{position6Url,jdbcType=VARCHAR},
+        position7MaterialID = #{position7MaterialID,jdbcType=INTEGER},
+        position7Url = #{position7Url,jdbcType=VARCHAR},
+        position8MaterialID = #{position8MaterialID,jdbcType=INTEGER},
+        position8Url = #{position8Url,jdbcType=VARCHAR},
+        position9MaterialID = #{position9MaterialID,jdbcType=INTEGER},
+        position9Url = #{position9Url,jdbcType=VARCHAR},
+        successToUrl = #{successToUrl,jdbcType=VARCHAR},
+        mobileMaterial1ID = #{mobileMaterial1ID,jdbcType=INTEGER},
+        mobileMaterial1Url = #{mobileMaterial1Url,jdbcType=VARCHAR},
+        mobileMaterial2ID = #{mobileMaterial2ID,jdbcType=INTEGER},
+        mobileMaterial2Url = #{mobileMaterial2Url,jdbcType=VARCHAR},
+        mobileMaterial3ID = #{mobileMaterial3ID,jdbcType=INTEGER},
+        mobileMaterial3Url = #{mobileMaterial3Url,jdbcType=VARCHAR},
+        mobileMaterial4ID = #{mobileMaterial4ID,jdbcType=INTEGER},
+        mobileMaterial4Url = #{mobileMaterial4Url,jdbcType=VARCHAR},
+        messages = #{messages,jdbcType=VARCHAR},
+        status = #{status,jdbcType=VARCHAR},
+        <!-- isDefault = 'N',-->
+        editTime = sysdate
+        <where>
+            <if test="id !=null and id != ''">
+                and portalModelID = #{id}
+            </if>
+        </where>
+    </update>
+
+    <!-- 根据模版Id查询模板表的数据-->
+    <select id="findById" resultMap="portalResult">
+        select  plc.placeId,plc.placeName,plc.memberId
+        ,a.portalModelID
+        ,a.isDefault
+        ,a.rootPortallModelID
+        ,a.portalModelName
+        ,a.title
+        ,a.backGroudUrl
+        ,a.logoUrl
+        ,a.position_N
+        ,a.logoID
+        ,a.backGroudID
+        ,a.position1MaterialID
+        ,a.position1Url
+        ,a.position2MaterialID
+        ,a.position2Url
+        ,a.position3MaterialID
+        ,a.position3Url
+        ,a.position4MaterialID
+        ,a.position4Url
+        ,a.position5MaterialID
+        ,a.position5Url
+        ,a.position6MaterialID
+        ,a.position6Url
+        ,a.position7MaterialID
+        ,a.position7Url
+        ,a.position8MaterialID
+        ,a.position8Url
+        ,a.position9MaterialID
+        ,a.position9Url
+        ,a.mobileMaterial1ID
+        ,a.mobileMaterial1url
+        ,a.mobileMaterial2ID
+        ,a.mobileMaterial2url
+        ,a.messages
+        ,a.successToUrl
+        ,mlogo.materialName logoName
+        ,mback.materialName backGroudName
+        ,m1.materialName position1MaterialName
+        ,m2.materialName position2MaterialName
+        ,m3.materialName position3MaterialName
+        ,m4.materialName position4MaterialName
+        ,m5.materialName position5MaterialName
+        ,m6.materialName position6MaterialName
+        ,m7.materialName position7MaterialName
+        ,m10.materialName mobileMaterial1Name
+        ,m11.materialName mobileMaterial2Name
+        ,m14.materialName mobileMaterial3Name
+        ,m15.materialName mobileMaterial4Name
+        from (select placeId ,placeName,memberId from basplace) plc
+        left join basPortalModel a on plc.placeId = a.placeId
+        left join adMaterial m1 on a.position1MaterialID = m1.materialid
+        left join adMaterial m2 on a.position2MaterialID = m2.materialid
+        left join adMaterial m3 on a.position3MaterialID = m3.materialid
+        left join adMaterial m4 on a.position4MaterialID = m4.materialid
+        left join adMaterial m5 on a.position5MaterialID = m5.materialid
+        left join adMaterial m6 on a.position6MaterialID = m6.materialid
+        left join adMaterial m7 on a.position7MaterialID = m7.materialid
+        left join adMaterial m10 on a.mobileMaterial1ID = m10.materialid
+        left join adMaterial m11 on a.mobileMaterial2ID = m11.materialid
+        left join adMaterial m14 on a.mobileMaterial3ID = m14.materialid
+        left join adMaterial m15 on a.mobileMaterial4ID = m15.materialid
+        left join adMaterial mlogo on a.logoID = mlogo.materialid
+        left join adMaterial mback on a.BACKGROUDID = mback.materialid
+        where a.portalModelID = #{id}
+    </select>
+    <!--判断portal模版名称是否重复-->
+    <select id="findCountBy" resultType="Integer">
+        select 1 <!--短路判断-->
+        from dual
+        where exists ( select portalModelID
+        from basPortalModel
+        where portalModelName = #{portalModelName}
+        and placeID = #{placeId}
+        <if test="id != null and id != ''">
+            and portalModelID &lt;> #{id}
+        </if>
+        )
+    </select>
+
+    <!--模版id 删除对应模版 -->
+    <delete id="deleteByIds">
+        delete from basPortalModel
+        where portalModelId in
+        <foreach index="index" item="item" collection="array" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <!--模版id 删除对应模版 -->
+    <delete id="deleteById">
+        delete from basPortalModel
+        where portalModelId = #{id}
+    </delete>
+</mapper>

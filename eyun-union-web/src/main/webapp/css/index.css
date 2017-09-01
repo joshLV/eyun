@@ -1,0 +1,33 @@
+﻿/*右侧悬浮菜单*/
+.OnlineService_Bg {
+	width: 100px;
+	overflow: hidden;
+	position: fixed;
+	right: 10px;
+	bottom: 20px;
+	z-index: 10;
+}
+
+.OnlineService_Top {
+	width: 90px;
+	height: 90px;
+	margin-bottom: 10px;
+}
+
+.OnlineService_Top a {
+	display: block;
+	width: 90px;
+	height: 33px;
+	background-color: #6099d6;
+	padding-top: 57px;
+	line-height: 30px;
+	font-size: 16px;
+	text-align: center;
+	color: #fff;
+	background-image: url(../common/images/icon_Top.png);
+	background-repeat: no-repeat;
+	background-position: center 8px;
+	cursor: pointer;
+	text-decoration: none;
+	color: #fff
+}

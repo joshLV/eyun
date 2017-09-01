@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rainsoft.union.web.sysmanage.model.MemberInfo">
+	<resultMap type="com.rainsoft.union.web.sysmanage.model.MemberInfo" id="MemberInfoResultMap">
+		<result column="id" property="userId" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="VARCHAR" />
+		<result column="updator" property="updator" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="DATE" />
+		<result column="update_time" property="updateTime" jdbcType="DATE" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="another_name" property="nickName" jdbcType="VARCHAR" /> 
+		<result column="pwd" property="currentPassword" jdbcType="VARCHAR" />
+		<result column="newUserPassword" property="newUserPassword" jdbcType="VARCHAR" />
+		<result column="card_type" property="cardType" jdbcType="VARCHAR" />
+		<result column="real_name" property="memberRealName" jdbcType="VARCHAR" />
+		<result column="tel" property="tel" jdbcType="VARCHAR" />
+		<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+		<result column="email" property="email" jdbcType="VARCHAR" />
+		<result column="area_id" property="areaID" jdbcType="VARCHAR" />
+		<result column="addr" property="addr" jdbcType="VARCHAR" />
+		<result property="areaName" column="areaName" jdbcType="VARCHAR" />
+		<result column="headImgUrl" property="headImgUrl" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 判断当前用户输入密码是否正确 -->
+	<select id="chcekCurrentPwd" parameterType="com.rainsoft.union.web.sysmanage.model.MemberInfo" resultType="java.lang.Integer">
+		select count(*) from t_sys_user a where a.id = #{userId,jdbcType=INTEGER} and a.pwd = #{currentPassword,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 修改密码 -->
+	<update id="updatePwd" parameterType="com.rainsoft.union.web.sysmanage.model.MemberInfo">
+		update t_sys_user  
+				set pwd = #{newUserPassword,jdbcType=VARCHAR},
+				updator=#{userId,jdbcType=INTEGER},update_time=sysdate,
+				remark=#{remark,jdbcType=VARCHAR} where id = #{userId,jdbcType=INTEGER}
+	</update>
+
+
+	<!-- 根据ID查询会员个人信息 -->
+	<select id="findById" resultMap="MemberInfoResultMap">
+		select t.id as userId,
+				t.another_name as nickName,
+				t.real_name as memberRealName,
+				t.tel,
+				t.mobile,
+				t.email,
+				t.area_id as areaID,
+				(select areaName from view_areafullname v where v.areaId = t.area_Id) as areaName,
+				t.addr,
+				t.headImgUrl
+				from t_sys_user t
+				left join pub.pubArea pbc on t.area_id=pbc.areaID
+				where t.id =#{userId,jdbcType=INTEGER}
+	</select>
+	
+	
+	<!-- 修改会员个人信息 -->
+	<update id="update" parameterType="com.rainsoft.union.web.sysmanage.model.MemberInfo">
+		update t_sys_user 
+				set real_name=#{memberRealName,jdbcType=VARCHAR},
+						tel=#{tel,jdbcType=VARCHAR},
+						mobile=#{mobile,jdbcType=VARCHAR},
+						email=#{email,jdbcType=VARCHAR},
+						area_id=#{areaID,jdbcType=INTEGER},
+						addr=#{addr,jdbcType=VARCHAR},
+						headImgUrl=#{headImgUrl,jdbcType=VARCHAR}
+				where id=#{userId,jdbcType=INTEGER}
+	</update>
+	
+	
+	<!--设置当前会员别名 -->
+	<update id="updateNickName" parameterType="com.rainsoft.union.web.sysmanage.model.MemberInfo">
+		update t_sys_user set another_name=#{nickName,jdbcType=VARCHAR},updator=#{userId,jdbcType=INTEGER},update_time=sysdate,remark=#{remark,jdbcType=VARCHAR} where id=#{userId,jdbcType=INTEGER}
+	</update>
+
+	<!--检查会员别名是否存在 -->
+	<select id="checkNickName" parameterType="com.rainsoft.union.web.sysmanage.model.MemberInfo" resultType="java.lang.Integer">
+		select 1 num from dual where exists(
+			select a.another_name as  nickName from t_sys_user a 
+			<where>
+				and a.another_name = #{nickName,jdbcType=VARCHAR}
+				<if test="userId != null and userId > 0">
+					and a.id !=#{userId,jdbcType=INTEGER}
+				</if>
+			</where>
+		)
+	</select>
+</mapper>

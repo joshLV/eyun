@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.index.model.Index">
+	<resultMap type="com.rainsoft.union.web.index.model.Index" id="UserInfoResultMap">
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="creator" property="creator" jdbcType="VARCHAR" />
+		<result column="updator" property="updator" jdbcType="VARCHAR" />
+		<result column="createTime" property="createTime" jdbcType="DATE" />
+		<result column="updatetime" property="updateTime" jdbcType="DATE" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="remarks" property="remark" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		
+		<result column="articleID" property="articleID" jdbcType="INTEGER" />
+		<result column="title" property="title" jdbcType="VARCHAR" />
+		<result column="validDate" property="validDate" jdbcType="VARCHAR" />
+		<result column="content" property="content" jdbcType="VARCHAR" />
+		<result column="fee" property="wwbBalance" jdbcType="VARCHAR" />
+		<result column="smsFee" property="smsBalance" jdbcType="VARCHAR" />
+		<result column="headImgUrl" property="memberHP" jdbcType="VARCHAR" />
+		<result column="memberID" property="userId" jdbcType="VARCHAR" />
+		<result column="createDate" property="createDate" jdbcType="VARCHAR" />
+		<result column="articleType" property="articleType" jdbcType="VARCHAR" />
+		
+	</resultMap>
+	
+	<!-- 查询新闻、公告列表 -->
+	<select id="findNewsBy" resultMap="UserInfoResultMap">
+		select a.articleID, a.title, a.validDate, 
+		to_char(a.createTime, 'yyyy/MM/dd ')as createDate,a.articletype,b.content 
+		from nwsArticle a, nwsArticlesContent b where a.articleID = b.articleID
+		and a.isRelease = '9' and a.articleType = #{articleType} order by a.createTime desc
+	</select>
+	
+	<!-- 根据id查询新闻、公告明细 -->
+	<select id="findById" resultMap="UserInfoResultMap">
+		select a.title, a.validDate, 
+		to_char(a.createTime, 'yyyy/MM/dd ')as createDate, b.content 
+		from nwsArticle a, nwsArticlesContent b 
+		where a.articleID = b.articleID and a.articleID = #{articleID}
+	</select>
+	
+	<!-- 查询头像 -->
+	<select id="findAccountInfo" resultMap="UserInfoResultMap">
+	<![CDATA[
+	    select 
+      		(select s.headImgUrl from t_sys_user s where s.id = #{userId}) headImgUrl
+       from dual
+	]]>
+	</select>
+	
+	<!-- 访客动态饼图数据 -->
+	<!-- <select id="findVisitorNumByMemberid" parameterType="java.lang.Integer" resultType="com.rainsoft.union.web.index.model.Index">
+	<![CDATA[
+		with m as (
+			select * from(
+				select * from business.authLoginInfoHis
+				union all
+				select * from business.authLoginInfo
+			) n where n.service_code in (select t.placecode from basplace t where t.memberid = #{memberId} or n.service_code in(select bp.placecode from operator_related_place orp left join basplace bp on orp.placeid = bp.placeid where orp.operatorid = #{memberId}))
+		)
+		select 
+			(select '0-2点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(1/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(2*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '2-4点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(2*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(4*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '4-6点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(4*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(6*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '6-8点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(6*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(8*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '8-10点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(8*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(10*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '10-12点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(10*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(12*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '12-14点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(12*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(14*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '14-16点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(14*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(16*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '16-18点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(16*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(18*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '18-20点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(18*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(20*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '20-22点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(20*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +(22*60*60/(24*60*60)) group by m.eyunId)) ||','||
+			(select '22-24点_' || count(*) from (select * from m where nvl(m.end_time_online, trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60))) >= trunc(sysdate ,'dd') +(22*60*60/(24*60*60)) and m.start_time_online < trunc(sysdate ,'dd') +((24*60*60 - 1)/(24*60*60)) group by m.eyunId)) content
+		from dual 
+	]]>
+	</select> -->
+</mapper>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.smsmanage.dao.SmsAssignaDao">
+	<!-- 查询当前会员的未分配短信余额 -->
+	<select id="getMemberSMSbalance" resultType="Integer">
+		select (case when B.totalBuySMSNum is null then 0 else totalBuySMSNum end) as totalBuySMSNum
+		from t_sys_user A left join bllMemberSMSRemain B on A.id=B.MEMBERID
+		where A.id = #{userId}
+	</select>
+	<!-- 更新会员未分配短信数量 -->
+	<update id="updateBuySMSNum" >
+		merge into bllMemberSMSRemain a using (select #{memberID} as memberID from dual) b on (a.memberID = b.memberID)
+		when matched then
+		update set totalBuySMSNum = #{theNumber} where memberID = #{memberID}
+		when not matched then
+		insert (memberSmsID,memberID,smsType,totalBuySMSNum,totalUseSMSNum) values (Seq_SMSRemainID.Nextval,#{memberID},'01',#{theNumber},0)
+	</update>
+
+	<!-- 更新场所配短信数量 -->
+	<update id="updateSMSRemain" >
+		merge into bllSMSRemain a
+		using (select #{placeID} as placeID from dual) b
+		on (a.placeID = b.placeID)
+		when matched then
+		update set totalBuysmsnum = totalUsesmsnum + #{theNumber,jdbcType=INTEGER} where placeID = #{placeID} and smstype='01'
+		when not matched then
+		insert (a.SMSRemainID,           a.placeID,         a.smsType,       a.totalBuyWWBiFee,
+		a.totalBuySMSNum,        a.totalUseSMSNum,  a.SMSFee,        a.SMSFeeOwnerFlag)
+		values (Seq_SMSRemainID.Nextval,  #{placeID},         '01',       #{theNumber},
+		#{theNumber},             0,                 0,               'S')
+	</update>
+
+	<!--  	根据会员ID和场所ID查询剩余短信数 -->
+	<select id="getSMSbalance" resultType="Integer">
+		select sum(a.totalBuySMSNum) - sum(a.totalUseSMSNum) WWBiFee from bllSMSRemain a
+		where <!--exists(select 1 from basPlace b where a.placeid = b.placeid and b.memberid = #{memberID})-->
+		<!--and -->a.smstype = '01'
+		<if test="placeID != null">
+			and a.placeID = #{placeID}
+		</if>
+	</select>
+
+	<!--查询-->
+	<select id="smsBalance" resultType="Integer">
+		<!--select
+		(select sum(bs.totalBuysmsnum - bs.totalUsesmsnum) as smsFee from bllSMSRemain bs, basplace b where b.memberID =
+		#{memberID} and bs.placeID = b.placeID and smstype='01')
+		+ (select (case when B.totalBuySMSNum is null then 0 else totalBuySMSNum end) as totalBuySMSNum from
+		usrMemberLogin A left join bllMemberSMSRemain B on A.Memberid=B.MEMBERID where A.memberID = #{memberID}) from
+		dual-->
+		select (select sum(bs.totalBuysmsnum - bs.totalUsesmsnum) as smsFee
+		from bllSMSRemain bs, basplace b,t_place_user_related pur
+		where pur.user_id = #{memberID}
+		and pur.place_code = b.placeCode
+		and bs.placeID = b.placeID
+		and smstype = '01') +
+		(select (case
+		when B.totalBuySMSNum is null then
+		0
+		else
+		totalBuySMSNum
+		end) as totalBuySMSNum
+		from t_sys_user u
+		left join bllMemberSMSRemain B
+		on u.id = B.MEMBERID
+		where u.id = #{memberID}
+		) smsFee from dual
+	</select>
+</mapper>

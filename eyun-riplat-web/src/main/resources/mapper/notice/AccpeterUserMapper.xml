@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.AccpeterUser">
+
+	<select id="findListBy" resultType="com.rainsoft.riplat.web.notice.model.AccpeterUser">
+		SELECT TEMP.* FROM (
+			SELECT F.ID,
+				F.NOTICE_ID noticeId,
+				F.STATUS,
+				CASE
+				WHEN F.STATUS = 0
+				THEN '未读'
+				WHEN F.STATUS = 1
+				THEN '已读'
+				WHEN F.STATUS = 2
+				THEN '已反馈'
+				ELSE '未读'
+				END statusName,
+				F.APPUSER_ID appuserId,
+				EDA.USER_NAME appuserName,
+				TO_CHAR(F.ACCPETER_TIME,'yyyy-MM-dd HH24:mi:ss') ACCPETER_TIME,
+				TO_CHAR(F.READ_TIME,'yyyy-MM-dd HH24:mi:ss') readTime
+				FROM T_ACCPETERUSER_FEEDBACK F
+				JOIN T_NOTICE N
+				ON N.ID = F.NOTICE_ID
+				JOIN T_EDA_APP_MEMBERS EDA
+				ON F.APPUSER_ID = EDA.EDA_ID
+				WHERE N.STATUS = 2
+				AND F.NOTICE_ID = #{noticeId}) TEMP
+			<if test="SORT != null and SORT != ''">
+				ORDER BY ${SORT} 
+			</if>
+			<if test="DIR != null and DIR != ''">
+				${DIR} NULLS LAST
+			</if>
+			
+	</select>
+
+</mapper>

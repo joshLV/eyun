@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.mgrparam.model.Platform">
+	<!-- 注：t_platform修改表名称为t_param_platform
+			T_PARAM_PLATFORM 修改表名称为 t_param_platform_type_dict -->
+	<!-- 平台信息列表 -->
+	<select id="findListBy" resultType = "platform">
+		SELECT T.ID,
+		  T.PLATFORM_ID,
+		  T.PLATFORM_NAME,
+		  T.PLATFORM_IP,
+		  T.ACTIVEABLE,
+		  T.PLATFORM_USER_NAME,
+		  T.PLATFORM_USER_PHONE,
+		  T.PLATFORM_USER_ADDRESS,
+		  CASE
+		    WHEN T.ACTIVEABLE = '0'
+		    THEN '未激活'
+		    WHEN T.ACTIVEABLE = '1'
+		    THEN '已激活'
+		    ELSE '无效'
+		    END ACTIVEABLENAME
+		FROM T_PARAM_PLATFORM T
+		<where>
+			<include refid="common.filtersUnderLine" />
+		</where>
+	</select>
+	
+	<!-- 删除平台信息 -->
+	<delete id = "deleteById">
+		DELETE FROM T_PARAM_PLATFORM T WHERE T.ID = #{id}
+	</delete>
+	
+	<!-- 根据id查询单个平台信息 -->
+	<select id="findById" resultType = "platform">
+		SELECT T.ID,
+			  T.PLATFORM_ID,
+			  T.PLATFORM_NAME,
+			  T.PLATFORM_IP,
+			  T.PLATFORM_TYPE,
+			  T.PLATFORM_USER_NAME,
+			  T.PLATFORM_USER_PHONE,
+			  T.PLATFORM_USER_ADDRESS,
+        DICT.PLATFORM_NAME PLATFORM_TYPE_NAME
+			FROM T_PARAM_PLATFORM T LEFT JOIN T_PARAM_PLATFORM_TYPE_DICT DICT
+      	ON T.PLATFORM_TYPE = DICT.ID
+			WHERE T.ID = #{id}
+	</select>
+	<!-- 根据绑定码（platformID）查询平台信息 -->
+	<select id="findByPlatformID" resultType = "platform">
+		SELECT T.ID,
+			  T.PLATFORM_ID,
+			  T.PLATFORM_NAME,
+			  T.PLATFORM_IP,
+			  T.PLATFORM_TYPE,
+			  T.ACTIVEABLE,
+        DICT.PLATFORM_NAME PLATFORM_TYPE_NAME
+			FROM T_PARAM_PLATFORM T LEFT JOIN T_PARAM_PLATFORM_TYPE_DICT DICT
+      	ON T.PLATFORM_TYPE = DICT.ID
+			WHERE T.PLATFORM_ID = #{platformId}
+	</select>
+	<select id="findByIP" resultType="platform">
+		SELECT T.ID,
+			  T.PLATFORM_ID,
+			  T.PLATFORM_NAME,
+			  T.PLATFORM_IP,
+			  T.PLATFORM_TYPE,
+        DICT.PLATFORM_NAME PLATFORM_TYPE_NAME
+			FROM T_PARAM_PLATFORM T LEFT JOIN T_PARAM_PLATFORM_TYPE_DICT DICT
+      	ON T.PLATFORM_TYPE = DICT.ID
+			WHERE T.PLATFORM_IP = #{platformIP}
+	</select>
+
+	<!-- 检查平台名称/IP/绑定码是否重复 -->
+	<select id="checkPlatformName" parameterType="platform" resultType="java.lang.Integer">
+		SELECT 1 NUM FROM DUAL WHERE EXISTS(SELECT T.PLATFORM_NAME FROM T_PARAM_PLATFORM T 
+		<where>
+			AND  T.PLATFORM_NAME=#{platformName} 
+			<if test="id != null and id > 0">
+				and T.ID != #{id}
+			</if>
+		</where>
+		)
+	</select>
+	
+	<!-- 检查平台IP否重复 -->
+	<select id="checkPlatformIP" parameterType="platform" resultType="java.lang.Integer">
+		SELECT 1 NUM FROM DUAL WHERE EXISTS(SELECT T.PLATFORM_IP FROM T_PARAM_PLATFORM T 
+		<where>
+			AND T.PLATFORM_IP=#{platformIP}
+			<if test="id != null and id > 0">
+				and T.ID != #{id}
+			</if>
+		</where>
+		)
+	</select>
+		<!-- 检查平台平台绑定码否重复 -->
+	<select id="checkPlatformId" parameterType="platform" resultType="java.lang.Integer">
+		SELECT 1 NUM FROM DUAL WHERE EXISTS(SELECT T.PLATFORM_ID FROM T_PARAM_PLATFORM T 
+		<where>
+			AND  T.PLATFORM_ID = #{platformId} 
+			<if test="id != null and id > 0">
+				and T.ID != #{id}
+			</if>
+		</where>
+		)
+	</select>
+	
+	<!-- 修改平台信息 -->
+	<update id="update">
+		UPDATE T_PARAM_PLATFORM T
+			SET T.PLATFORM_ID = #{platformId},
+			  T.PLATFORM_IP   = #{platformIP},
+			  T.PLATFORM_NAME = #{platformName},
+			  T.PLATFORM_USER_NAME = #{platformUserName},
+			  T.PLATFORM_USER_PHONE = #{platformUserPhone},
+			  T.PLATFORM_USER_ADDRESS = #{platformUserAddress}
+			  <if test="activeable != null and activeable != ''">
+			  	,T.ACTIVEABLE    = #{activeable}
+			  </if>
+			WHERE T.ID = #{id}
+	</update>
+	
+	<!-- 保存平台信息 -->
+	<!-- 添加字段  PLATFORM_USER_NAME，PLATFORM_USER_PHONE，PLATFORM_USER_ADDRESS -->
+	<insert id = "save">
+		INSERT INTO T_PARAM_PLATFORM(ID,PLATFORM_ID,PLATFORM_NAME,PLATFORM_IP,PLATFORM_TYPE,PLATFORM_USER_NAME,PLATFORM_USER_PHONE,PLATFORM_USER_ADDRESS,ACTIVEABLE)
+			VALUES (SEQ_PLATFORM.NEXTVAL,
+					#{platformId},
+					#{platformName},
+					#{platformIP},
+					#{platformType},
+					#{platformUserName},
+					#{platformUserPhone},
+					#{platformUserAddress},
+					'1'
+					)
+	</insert>
+	
+	<!-- 获取平台类型 -->
+	<select id="findPlatformTypeList" resultType = "platform">
+		SELECT T.ID PLATFORM_ID,T.PLATFORM_NAME FROM T_PARAM_PLATFORM_TYPE_DICT T
+	</select>
+	<!-- 获取所有平台绑定码 -->
+	<select id="findPlatformIdList" resultType = "platform">
+		SELECT T.ID ,T.PLATFORM_ID FROM T_PARAM_PLATFORM T
+	</select>
+	
+	<!-- 平台激活 -->
+	<update id="activeLicense">
+		UPDATE T_PARAM_PLATFORM T 
+			SET T.ACTIVEABLE = 1
+		WHERE T.PLATFORM_ID = #{platformId}
+	</update>
+</mapper>

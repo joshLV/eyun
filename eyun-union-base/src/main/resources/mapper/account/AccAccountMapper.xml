@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.account.model.AccAccount">
+
+	<resultMap type="com.rainsoft.union.web.account.model.AccAccount"
+		id="wwbAccEntityResult">
+		<result property="accountBal" column="accountBal" />
+		<result property="userId" column="memberId" />
+		<result property="rmbFee" column="RMBFee" />
+		<result property="wwbiFee" column="WWBiFee" />
+		<result property="payStatus" column="status" />
+		<result property="totalbuywwbifee" column="totalbuywwbifee" /><!-- 账户总充值金额 -->
+		<result property="totalusewwbifee" column="totalusewwbifee" /><!-- 账户总消费金额 -->
+	</resultMap>
+	<insert id="saveAccBuyRecord" parameterType="com.rainsoft.union.web.account.model.AccAccount">
+		
+		<selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="buyWWBiRecordId">
+			select seq_buyWWBiRecordID.Nextval as buyWWBiRecordId from dual
+		</selectKey>
+		insert into bllBuyWWBiRecord
+		  (buyWWBiRecordId,
+		   memberId,
+		   relatingId,
+		   payChannel,
+		   RMBFee,
+		   WWBiFee,
+		   remarks,
+		   useType,
+		   optor,
+		   status,
+		   optTime)
+		values
+		  (#{buyWWBiRecordId },
+		   #{userId },
+		   #{relatingId},
+		   #{payChannel},
+		   #{rmbFee},
+		   #{wwbiFee},
+		   #{remark},
+		   #{useType},
+		   #{creator},
+		   #{payStatus},
+		   sysdate)
+	</insert>
+	
+	<!-- 插入账户消费记录 -->
+	<insert id="saveAccUseRecord" parameterType="com.rainsoft.union.web.account.model.AccAccount">
+		<selectKey resultType="java.lang.Integer" order="BEFORE" keyProperty="useWWBiRecordID">
+			select seq_useWwbiRecordId.Nextval as useWWBiRecordID from dual
+		</selectKey>
+	 	 insert into bllusewwbirecords 
+			  (usewwbirecordid,
+			   memberid,
+			   placeid,
+			   usetype,
+			   usewwbimoney,
+			   opttime,
+			   status,
+			   relatingid)
+			values
+			  (#{useWWBiRecordID},
+			   #{userId},
+			   #{id},
+			   #{useType},
+			   #{rmbFee},
+			   sysdate,
+			   'Y',
+			   #{relatingId,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 查询人民币余额 -->
+	<select id="getAccountBal" resultMap="wwbAccEntityResult">
+		select
+		totalBuyWWBiFee - totalUseWWBiFee as accountBal,
+		totalusewwbifee
+		from bllAccountInfo
+		where status = 'Y'
+		and memberId = #{userId }
+	</select>
+
+	<!--易付宝付款后的回调 需要用到的sql -->
+
+	<select id="getWwbiRecord" resultMap="wwbAccEntityResult">
+		select memberId,RMBFee,WWBiFee,status
+		from bllBuyWWBiRecord
+		where buyWWBiRecordId = #{orderId }
+	</select>
+
+
+	<update id="uptWwbiRecord" >
+		update bllBuyWWBiRecord
+		set relatingId = #{relatingId },
+		status = #{payStatus }
+		where buyWWBiRecordId = #{orderId }
+	</update>
+
+
+	<update id="uptUserAccInfo" >
+		merge into bllAccountInfo a
+		using (select #{userId } as memberId from dual) b
+		on (a.memberId = b.memberId)
+		when matched then
+		update
+		set a.totalMoney = totalMoney + #{RMBFee},
+		a.totalBuyWWBiFee = totalBuyWWBiFee + #{WWBiFee}
+		when not matched then
+		insert
+		(a.memberID, a.totalMoney, a.totalBuyWWBiFee,a.totalUseWWBiFee, 
+		 a.status,a.totalPoint,a.totalUsePoint,a.totalGiveWWBiFee,a.totalUseGiveWWBiFee)
+		values
+		(#{userId}, #{RMBFee}, #{WWBiFee}, 0, 'Y', 0, 0, 0, 0)
+	</update>
+	
+	<update id="uptAccInfoUesFee">
+		 update bllaccountinfo
+            set totalusewwbifee = #{totalusewwbifee}
+            where memberid = #{userId}
+	</update>
+
+</mapper>

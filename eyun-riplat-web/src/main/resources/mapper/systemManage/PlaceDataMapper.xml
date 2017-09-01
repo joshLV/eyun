@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.systemManage.model.PlaceData">
+	<resultMap type="com.rainsoft.riplat.web.systemManage.model.PlaceData" id="placeResult">
+		<result property="id" column="placeID" />
+		<result property="placeName" column="placeName" />
+		<result property="contact" column="contact" />
+		<result property="tel" column="tel" />
+		<result property="mobile" column="mobile" />
+		<result property="email" column="email" />
+		<result property="addr" column="addr" />
+		<result property="areaId" column="areaId" />
+		<result property="remark" column="remarks" />
+		<result property="placeType" column="placeType" />
+		<result property="status" column="status" />
+		<result property="areaName" column="areaName" />
+		<result property="placeTypeName" column="placeTypeName" />
+	</resultMap>
+
+	<!--场所资料的列表查询 -->
+	<select id="findListBy" parameterType="com.rainsoft.riplat.web.systemManage.model.MemberInfo" resultMap="placeResult">
+		select
+		placeID as id,    <!--场所主键 -->
+		placeName,
+		contact,
+		tel,
+		mobile,
+		email,
+		addr,
+		areaId,
+		remarks,
+		status,
+		(select areaName from view_areafullname v where v.areaId = a.areaId) as areaName,
+		(select name from basPlaceType bpt where bpt.id = a.placeType) as placeTypeName
+		from basPlace a where 1=1
+		<if test="userId!=null and userId!=''">
+			and memberId = #{userId}
+		</if>
+		<if test="id!=null and id !=''">
+			and placeID = #{id}
+		</if>
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+
+</mapper>

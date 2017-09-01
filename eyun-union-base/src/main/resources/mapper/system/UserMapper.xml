@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.system.dao.UserDao">
+    <!--检查手机号码是否注册 用户是否存在-->
+    <select id="checkMobile" resultType="Integer">
+       <!-- select 1 from dual
+        where exists (-->
+        select id from t_sys_user where name= #{userName} and mobile = #{mobile}
+        <!--)-->
+    </select>
+
+    <!-- 查询发送的验证码 -->
+    <select id="checkCode"  resultType="String">
+        select verCode
+        from usrMemberVerInfo
+        where memberVerInfoID = ( select max(memberVerInfoID)
+        from usrMemberVerInfo
+        where status = 'N'
+        and verType = #{type}<!--1：会员注册邮箱验证；2：会员注册手机验证；3：找回密码。。。-->
+        and verObject = #{mobile}
+        and createTime >= (sysdate - #{time}/1440)<!--代表验证码有效时间-->
+        )
+    </select>
+    <!--将短信验证码保存到用户验证码表-->
+    <insert id="saveCode">
+        insert into usrMemberVerInfo
+        (memberVerInfoID, verType, memberID, verObject, verCode, status, verTime, createTime)
+        values
+        (seq_memberVerInfoID.Nextval, #{type,jdbcType=VARCHAR}, #{memberId,jdbcType=INTEGER},
+        #{mobile,jdbcType=VARCHAR}, #{code,jdbcType=VARCHAR}, 'N', null, sysDate)
+    </insert>
+
+    <!--检验该手机号码发送次数-->
+    <select id="sendCount" resultType="Integer">
+        select count(memberVerInfoID)
+        from usrMemberVerInfo
+        where verType = #{type,jdbcType=VARCHAR} and verObject = #{mobile,jdbcType=VARCHAR} and createTime >= TRUNC(sysdate)
+    </select>
+
+    <!--修改验证码为已经使用-->
+    <update id="updateCodeStatus">
+        update USRMEMBERVERINFO
+        set status = 'Y',verTime = sysdate
+        where verObject = #{mobile,jdbcType=VARCHAR} and verCode = #{code,jdbcType=VARCHAR}
+    </update>
+
+    <!--重置用户密码-->
+    <update id="resetPwd">
+        update t_sys_user set pwd = #{pwd,jdbcType=VARCHAR} where name = #{userName,jdbcType=VARCHAR} and mobile = #{mobile,jdbcType=VARCHAR}
+    </update>
+</mapper>

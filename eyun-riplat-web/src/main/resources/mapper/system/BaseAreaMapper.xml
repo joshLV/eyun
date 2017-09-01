@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd</SPAN>">
+<mapper namespace="com.rainsoft.base.web.system.model.BaseArea">
+	<resultMap type="com.rainsoft.base.web.system.model.BaseArea" id="MemberInfoResultMap">
+		<result column="areaid" property="id" jdbcType="VARCHAR" />
+		<result column="areaname" property="name" jdbcType="VARCHAR" />
+		<result column="parentid" property="pId" jdbcType="VARCHAR" />
+		<result column="treeLevel" property="treeLevel" jdbcType="VARCHAR" />
+		<result column="nodePath" property="nodePath" jdbcType="VARCHAR" />
+		<!-- <result column="nodePath" property="nodePath" jdbcType="VARCHAR" /> <result column="treeLevel" property="treeLevel" jdbcType="VARCHAR" /> <result column="ifLeaf" property="ifLeaf" jdbcType="INTEGER" /> <result column="existFlag" property="existFlag" jdbcType="VARCHAR" /> -->
+	</resultMap>
+	<select id="findAllArea" parameterType="Integer" resultMap="MemberInfoResultMap">
+		select * from pub.pubarea
+	</select>
+</mapper>

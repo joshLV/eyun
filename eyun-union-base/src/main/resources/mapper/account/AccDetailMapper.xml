@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.account.model.AccDetail">
+	<!-- 旺旺币充值记录 -->
+    <resultMap type="com.rainsoft.union.web.account.model.AccDetail" id="wwbDetailEntityResult">
+    
+ 		<result property="rowNum" column="id" />
+ 		<result property="userId" column="memberId" />
+        <result property="buyWwbiRecordId" column="buyWWBiRecordId" />
+		<result property="relatingId" column="relatingId" />
+		<result property="payChannel" column="payChannel" />
+		<result property="rmbFee" column="RMBFee" />
+		<result property="wwbiFee" column="WWBiFee" />
+		<result property="remark" column="remarks" />
+		<result property="payStatus" column="status" />
+		<result property="payStatusRemark" column="statusRemark" />
+		<result property="creator" column="optor" />
+		<result property="updateTime" column="optTime"/>
+		<result property="useType" column="useType" />
+		<result property="userName" column="membername" />
+ 	</resultMap>
+ 	
+ 	<!-- 旺旺币支出记录 -->
+ 	<resultMap
+		type="com.rainsoft.union.web.account.model.AccUseRecord" id="bllUserMap">
+		<result property="id" column="id" />
+		<result property="useWWBiRecordID" column="useWWBiRecordID" />
+		<result property="userId" column="memberID" />
+		<result property="placeID" column="placeID" />
+		<result property="useType" column="usetypes" />
+		<result property="useWWBiMoney" column="useWWBiMoney" />
+		<result property="optTime" column="optTime" />
+		<result property="remarks" column="remarks" />
+		<result property="status" column="status" />
+		<result property="placename" column="placename" />
+		<result property="membername" column="membername" />
+	</resultMap>
+	
+    <!--获得账户充值记录  -->
+    <select id="getAccBuyRecord" resultMap="wwbDetailEntityResult">
+		 	WITH bwwb as(
+			select ROWNUM as id,rd.memberID,rd.buyWWBiRecordID,rd.relatingID,
+			case rd.payChannel 
+	           when '6' then
+	           '易宝支付'
+	           when '7' then
+	           '支付宝' 
+	           when '8' then 
+	           '微信' else
+	           '其他'
+	           end as payChannel,
+	           rd.RMBFee,rd.WWBiFee ,rd.remarks ,rd.status,
+			 case rd.status 
+ 			   		when '0' then '未付款'
+ 			   		when '3' then '作废'
+ 			   		when '8' then '已付款'
+ 			   		when '9' then '付款失败'
+ 			   		when '4' then '已付款未到账'
+ 			   end as statusRemark,
+ 			 rd.optor,rd.optTime,rd.useType,us.name membername        
+			 from  bllBuyWWBiRecord rd 
+			 	left join t_sys_user us on us.Id = rd.memberId 
+			 where rd.memberId = #{userId}
+			 <if test="startTime != null and startTime != ''">
+				 and rd.opttime &gt;= to_date(#{startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+			 </if>
+			 <if test="endTime != null and endTime != ''">
+		 		 and rd.opttime &lt;= to_date(#{endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+	         </if>
+		 ) select * from bwwb
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+		
+	</select>
+	
+	<!-- 获取张支出记录 -->
+	<select id="getAccUseRecord" resultMap="bllUserMap">
+	WITH userWwb as(
+			select  ROWNUM as id,a.usewwbirecordid,a.memberid,a.usetype,
+			case a.usetype 
+ 			   		when '1' then '购买短信'
+ 			   		when '2' then '购买广告位'
+ 			   		when '3' then '购买旺旺吧系统使用'
+ 			   		when '7' then '购买旺旺币'
+ 			   end as usetypes,
+				 a.usewwbimoney,a.opttime,a.remarks,a.status,a.placeid,
+				 a.placename ,a.membername
+			from(
+				select u.usewwbirecordid,u.memberid,u.usetype,
+					   u.usewwbimoney,u.opttime,u.remarks,u.status,u.placeid,
+					   p.placename,s.name membername
+		        from bllUseWWBiRecords u 
+		        	left join t_sys_user s on s.id = u.memberid 
+		        	left join basplace p on p.placeid = u.placeid 
+		        where u.memberid = #{userId}
+		        <if test="startTime != null and startTime != ''">
+				 	and u.opttime &gt;= to_date(#{startTime} || ' 00:00:00', 'yyyy/mm/dd hh24:mi:ss')
+			 	</if>
+			 	<if test="endTime != null and endTime != ''">
+		 		 	and u.opttime &lt;= to_date(#{endTime} || ' 23:59:59', 'yyyy/mm/dd hh24:mi:ss')
+	         	</if>  
+	            <if test="useType != null and useType !='' ">
+					and u.useType = #{useType}
+				</if>  
+	            <if test="placeCode != null and placeCode != -1">
+				  	and p.placeCode = #{placeCode}
+				</if>
+				order by u.opttime desc
+			   )a
+		 )
+		select * from userWwb
+		<if test="SORT != null and SORT != ''">
+			order by ${SORT}
+		</if>
+		<if test="DIR != null and DIR != ''">
+			${DIR}
+		</if>
+	</select>
+	
+</mapper>

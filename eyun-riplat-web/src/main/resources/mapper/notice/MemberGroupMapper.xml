@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.MemberGroup">
+	
+	<insert id="save">
+	INSERT
+		INTO T_MEMBER_CORRELATION_GROUP T VALUES
+		  (
+		    SEQ_MEMBER_CORRELATION_GROUP.NEXTVAL,
+		    #{memberId},
+		    #{memberType},
+		    #{groupId}
+		  )
+	</insert>
+
+	<!-- 删除组与成员之间的关系 -->
+	<delete id="deleteByGroupId">
+		DELETE T_MEMBER_CORRELATION_GROUP T WHERE T.GROUP_ID = #{id}
+	</delete>
+
+</mapper>

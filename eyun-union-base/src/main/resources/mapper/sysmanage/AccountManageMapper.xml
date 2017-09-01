@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.union.web.sysmanage.model.AccountManage">
+	<resultMap type="com.rainsoft.union.web.sysmanage.model.AccountManage" id="AccountManageResultMap">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="creator" property="creator" jdbcType="VARCHAR" />
+		<result column="updator" property="updator" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="DATE" />
+		<result column="update_time" property="updateTime" jdbcType="DATE" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="name" property="loginName" jdbcType="VARCHAR" />
+		<result column="placeid" property="placeid" jdbcType="VARCHAR" />
+		<result column="deviceid" property="deviceid" jdbcType="VARCHAR" />
+		<result column="id" property="userId" jdbcType="INTEGER" />
+		<result column="another_name" property="nickName" jdbcType="VARCHAR" />
+		<result column="place_code" property="placeCode" jdbcType="VARCHAR" />
+		<result column="pwd" property="currentPassword" jdbcType="VARCHAR" />
+		<result column="currentMemberId" property="currentMemberId" jdbcType="VARCHAR" />
+		<result column="payPassword" property="payPassword" jdbcType="VARCHAR" />
+		<result column="currentPwd" property="currentPwd" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 根据会员ID查询管理的所属账号 -->
+	<select id="findListBy" resultMap="AccountManageResultMap">
+		select
+		    a.id ,
+		    min(a.name) as loginName,
+		    count(b.placeid) as placeid,
+		    count(c.deviceid) as deviceid,
+		    min(a.createTime) as createTime,
+		    min(a.creator) as creator,
+		    min(a.updator) as updator,
+		    min(a.remark) as remark
+		    from
+		    (select
+		    u.id,
+		    u.name,
+		    to_char(u.create_time, 'yyyy-mm-dd hh:mm:ss') as createTime,
+		    u.creator,
+		    u.updator,
+		    u.remark
+		    from
+		    t_sys_user u
+		    where u.parent_id =#{userId}) a
+		    left join basplace b
+		    on a.id = b.memberid
+		    left join basdevice c
+		    on c.placeid = b.placeid
+		    group by a.id
+	</select>
+	
+	<!-- 使用状态为正常是才可进行绑定的操作 -->
+	<!-- 检查绑定账户和密码是否正确并得到绑定对象实例 -->
+	<select id="getBindAccount" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage" resultType="com.rainsoft.union.web.sysmanage.model.AccountManage">
+			select *  from t_sys_user a where a.name = #{currentMemberId,jdbcType=VARCHAR} and a.pwd = #{currentPassword,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 判断子账号是否已被其它的账号绑定-->
+	<select id="checkSelfByOtherBind" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage" resultType="java.lang.Integer">
+			select count(1) from t_sys_user a  where a.parent_id = #{id,jdbcType=INTEGER}
+	</select>
+	
+	<!-- 检查子账号不能拥有主账号的场所 -->
+<!-- 	<select id="checkSubPlace" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage" resultType="java.lang.Integer"> -->
+<!-- 		select 1 num from dual where exists( select t.user_id as userId from t_place_user_related t -->
+<!-- 		   <where> -->
+<!-- 			    t.user_id = #{userId,jdbcType=INTEGER} and t.place_code =#{placeCode,jdbcType=VARCHAR} -->
+<!-- 		   </where> -->
+<!-- 		   ) -->
+<!-- 	</select> -->
+	<!-- 获取当前需要绑定账号的userid, placeCode -->
+<!-- 	<select id="findUserId" resultMap="AccountManageResultMap"> -->
+<!-- 		select a.id as userId,r.place_code as placeCode from t_sys_user a -->
+<!-- 				left join t_place_user_related r on a.id= r.user_id  -->
+<!-- 			 				where a.name =#{currentMemberId,jdbcType=VARCHAR} -->
+<!-- 	</select> -->
+	
+	<!-- 获取当前需要绑定账号的 placeCode -->
+	<select id="getCurrentUserIdCodes" resultMap="AccountManageResultMap">
+		select a.id as userId, r.place_code as placeCode from t_sys_user a
+				left join t_place_user_related r on a.id= r.user_id 
+			 				where a.id =#{id,jdbcType=INTEGER}
+	</select>
+
+	<!-- 获取父账号的PlaceCode -->
+	<select id="getParentUserIdCodes" resultMap="AccountManageResultMap">
+		select r.place_code as placeCode from t_sys_user a
+				left join t_place_user_related r on a.id= r.user_id 
+			 				where a.id =#{userId,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 检查子账号是否被绑定过 -->
+	<select id="checkIsNotBind" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage" resultType="java.lang.Integer">
+				select count(1) from t_sys_user a  where  a.parent_id != 0 and a.id=#{id,jdbcType=INTEGER}
+	</select>
+	
+	<!-- 绑定帐号 -->
+	<update id="bindingAccount" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage">
+		  update t_sys_user u  set u.parent_id = #{userId,jdbcType=INTEGER}  where u.name = #{currentMemberId,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 绑定账号之后给场所用户关联添加一条记录 -->
+	<insert id="addRelated" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage">
+		insert into t_place_user_related (id, user_id, place_code, creator, updator, create_time, update_time, status)
+		select seq_related_id.nextVal id, b.* from
+		(<foreach collection="array" index="index" item="item" open="(" close=")" separator="union all">
+			select #{id} user_id, #{item} place_code, #{creator} creator, #{updator} updator, sysdate create_time, sysdate update_time, '8' status from dual
+		</foreach>) b
+	</insert>
+	
+	<!-- 根据当前账户id解绑账号 -->
+<!-- 	<update id="delBindAccount" parameterType="com.rainsoft.union.web.sysmanage.model.AccountManage"> -->
+<!-- 		update t_sys_user set parent_id = 0,updator=#{id},update_time=sysdate,remark='解绑账号操作' where id=#{userId,jdbcType=INTEGER} -->
+<!-- 	</update> -->
+	
+	<!-- 获取当前需要解绑账号的userid, placeCode -->
+<!-- 	<select id="getUserIdPlaceCode" resultMap="AccountManageResultMap"> -->
+<!-- 		select a.id as userId,r.place_code as placeCode from t_sys_user a -->
+<!--         	left join t_place_user_related r on a.id= r.user_id  -->
+<!--                where a.id=#{userId,jdbcType=INTEGER} -->
+<!-- 	</select>  -->
+
+	<!-- 处理场所关联用户表中  删除子账号与主账号的场所绑定关系 -->
+<!-- 	<delete id="deleteBindPlaceCode"> -->
+	<!-- 	delete t_place_user_related  re where re.user_id = #{userId} and re.place_code =#{placeCode}  -->
+<!-- 		delete t_place_user_related  re where re.user_id = #{userId} and re.place_code in -->
+<!-- 		<foreach collection="array" index="index" item="item" open="(" close=")" separator=","> -->
+<!-- 			#{item} -->
+<!-- 		</foreach> -->
+<!-- 	</delete> -->
+	
+	
+    <!-- 根据获取子账号userId获取对应的所有场所 -->
+    <select id="findCodeIds" resultMap="AccountManageResultMap">
+		select a.id as userId,r.place_code as placeCode from t_sys_user a
+				left join t_place_user_related r on a.id= r.user_id 
+			 				where a.id=#{id,jdbcType=INTEGER}
+	</select> 
+	
+</mapper>

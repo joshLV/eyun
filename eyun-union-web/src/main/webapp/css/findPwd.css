@@ -1,0 +1,123 @@
+@charset "utf-8";
+/* CSS Document */
+.bg{ background:url(../images/findPwd/bootm_bg.png) no-repeat center bottom; height:100%;}
+table {border-collapse:collapse;border-spacing:0;} 
+fieldset,img {border:0; padding:0;} 
+ol,ul {list-style:none} 
+caption,th {text-align:left} 
+h1,h2,h3,h4,h5,h6 {font-size:100%;font-weight:normal} 
+q:before,q:after {content:''} 
+abbr,acronym { border:0}
+/*a{ font:12px/22px "微软雅黑"; color:#FFF; text-decoration:none;}
+a:hover{ font:12px/22px "微软雅黑"; color:#ffef87; text-decoration:none;}*/
+a {color: #3399e0;    cursor: pointer;  text-decoration: none;}
+.clear{ clear:both;}
+.marg14{ margin-right:13px;}
+.margtop{ margin-top:10px;}
+.margbot{ margin-bottom:10px;}
+.height15{ height:15px;}
+input{ font:12px/24px "微软雅黑"; color:#999;}
+
+
+
+.top_t{ width:100%; height:138px; background:url(../images/findPwd/top_bg_02.png) repeat-x;}
+.top_nr{ width:1000px; height:138px; background:url(../images/findPwd/top_nr_02.png) no-repeat center; margin:0 auto;}
+.top_nr a{ width:247px; height:67px; display:block; padding:24px 0 0 24px;}
+
+.param-box{
+	width:800px;
+	margin: 0 auto;
+}
+.param-box td{
+	height: 40px;
+}
+.param-box .td-oper{
+	padding-top: 40px;
+}
+.param-box .lbl{ 
+	font:14px/32px "宋体"; 
+	color:#000; 
+	padding-right:12px;
+}
+.param-box .val{
+	height:30px; 
+	border:1px solid #ccc; 
+	padding:0 5px; 
+}
+.param-box .wdth-normal{
+	width:264px;
+}
+.param-box .wdth-auth{
+	width:80px;
+}
+
+.param-box .time-tip{
+	display:inline-block;
+	width:80px; 
+	height:32px; 
+	text-align:center; 
+	font:14px/32px "宋体"; 
+	background:#2c91d6; 
+	color:#fff; 
+	margin-left:10px;
+}
+.param-box .place-holder{
+	width: 50px;
+	display: inline-block;
+}
+.yanxian{ width:1000px; margin:0 0 50px 0;  border-bottom:2px solid #ddd;}
+.yanxian a{ height:75px; font:16px/75px "微软雅黑"; text-align:center; display:block; color:#666666;}
+
+
+.box-login{width: 100%;height: 400px;padding-top: 50px; }
+.box-login a{color: #00f;cursor: pointer;}
+.box-login a:hover{text-decoration: underline; }
+.box-retrieve-pwd{ width:1000px; margin:0 auto;}
+
+.btn{ width:296px; margin:40px auto;}
+.btna{ width:296px; height:36px; background:#f2ab3b; border:none;border-radius: 4px; behavior: url(ie-css3.htc); font:bold 14px/36px "宋体"; color:#FFF; text-align:center; margin-bottom:20px; cursor:pointer;}
+.btnb{ width:143px; height:36px; background:#5fc7f2; border:none;border-radius: 4px; behavior: url(ie-css3.htc); font:bold 14px/36px "宋体"; color:#FFF; text-align:center; cursor:pointer;}
+/* input password part */
+/*=================*/
+#in_password .warn { line-height: 33px; }
+#in_password .warn_p {line-height:12px; margin-top:10px;}
+#in_password .msg_level { display: inline-block; margin: 0 15px 0 0; overflow: hidden; width: 130px; vertical-align: middle; display: inline; position: relative; top: -1px; }
+#in_password .msg_level span { background-color: #b9b9b9; color: #fff; display: inline-block; height: 14px; line-height: 14px; margin-left: 1px; text-align: center; width: 42px; _height: 13px; _padding-top: 2px; _overflow: hidden; _margin-top: -16px; }
+#in_password .msg_level .s1 { background-color: #ffc6a0; }
+#in_password .msg_level .s2 { background-color: #ffa568; }
+#in_password .msg_level .s3 { background-color: #ff8e42; }
+
+/*以上是老样式 不想吐槽----------------------------------------------*/
+.param-box .error{color:#ab0707;}
+.ico__error{background:url(../images/findPwd/error.jpg) no-repeat;width:20px;height:20px;    display: inline-block;
+	vertical-align: text-bottom;}
+.ico__pass{background:url(../images/findPwd/success.jpg) no-repeat;width:20px;height:20px;    display: inline-block;
+	vertical-align: text-bottom;}
+.msg{    margin-left: 15px;font: 12px/1.5 微软雅黑,Arial,Helvetica,sans-serif;}
+
+.form_input_error {
+	border-color: #aa0707;
+	/*-webkit-box-shadow: 0 0 1px #c00, inset 1px 1px 3px #c3c3c3;
+	box-shadow: 0 0 1px #c00, inset 1px 1px 3px #c3c3c3;
+	background: #fff6f6;*/
+}
+.pswd_state {
+	margin: 0 5px;
+	position: relative;
+	zoom: 1;
+	vertical-align: middle;
+	display: inline-block;
+	width: 124px;
+	height: 10px;
+	background-color: #ececec;
+	border: 1px solid #8fd1ff;
+}
+.pswd_state{margin:0 5px;position:relative;zoom:1;vertical-align:middle;display:inline-block;*display:inline;*zoom:1;width:124px;height:10px;background-color:#ececec;border:1px solid #8fd1ff;}
+.pswd_state_def{border:1px solid #c7c7c7;}
+.pswd_state .level{position:absolute;top:1px;left:1px;width:40px;height:8px;display:inline-block;*display:inline;*zoom:1;overflow:hidden;}
+.pswd_state .level_1{background-color:#8fd1ff;}
+.pswd_state .level_2{background-color:#43b1fe;left:42px;}
+.pswd_state .level_3{background-color:#3399e0;left:83px;}
+.pswd_state .level_0{background-color:#c7c7c7;}
+.pswd_state .level_0_1{background-color:#a0a0a0;left:42px;}
+.pswd_state .level_0_2{background-color:#898989;left:83px;}

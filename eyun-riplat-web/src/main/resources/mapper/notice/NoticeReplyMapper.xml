@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rainsoft.riplat.web.notice.model.ReplyHistory">
+
+	<select id="findListBy" resultType="com.rainsoft.riplat.web.notice.model.ReplyHistory">
+		SELECT  TPH.id ,
+			  TPH.REPLY_CONTENT,
+			  TPH.REPLY_TIME,
+			  VAT.USER_NAME
+			FROM T_REPLY_HISTORY TPH
+			JOIN V_ACCOUNT_TYPE VAT
+			ON TPH.REPLY_USER_ID    = VAT.USER_ID
+			AND TPH.REPLY_USER_TYPE = VAT.USER_TYPE
+			AND TPH.NOTICE_ID       = #{noticeId}
+		
+			<if test="SORT != null and SORT != ''">
+				ORDER BY ${SORT} 
+			</if>
+			<if test="DIR != null and DIR != ''">
+				${DIR} NULLS LAST
+			</if>
+			
+	</select>
+
+</mapper>
